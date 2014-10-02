@@ -5,17 +5,30 @@ class HalfedgeMesh:
         self.halfedges = []
         self.facets = []
 
-    def read_off(self, filename):
+    def parse_off(self, filename):
+        """Parses OFF files and returns a set of vertices, halfedges, and
+        facets.
+        """
+        pass
+
+    def get_halfedge(self, u, v):
+        """Retrieve halfedge with starting vertex u and target vertex v
+
+        u - starting vertex
+        v - target vertex
+
+        Returns a halfedge
+        """
+        pass
 
     class Vertex:
         def __init__(self, x, y, z, index):
             """Create a vertex with given index at given point.
 
-            Args:
-                x: x-coordinate of the point
-                y: y-coordinate of the point
-                z: z-coordinate of the point
-                index: integer id of this vertex
+            x     - x-coordinate of the point
+            y     - y-coordinate of the point
+            z     - z-coordinate of the point
+            index - integer id of this vertex
             """
             pass
 
