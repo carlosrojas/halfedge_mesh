@@ -9,6 +9,7 @@ class TestHalfedgeMesh:
 
     def test_halfedgemesh_vertices_are_in_order_with_cubeoff(self,
                                                              cube_off_mesh):
+        # Tests parse_off since Vertex is just a basic class
         vertices = cube_off_mesh.vertices
 
         # cube vertices in order
@@ -23,6 +24,7 @@ class TestHalfedgeMesh:
 
     def test_halfedgemesh_vertices_in_facet_exists_with_cubeoff(self,
                                                                 cube_off_mesh):
+        # Tests parse_off since Vertex is just a basic class
 
         facets = cube_off_mesh.facets
         vertices = cube_off_mesh.vertices
