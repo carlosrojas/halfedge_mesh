@@ -13,7 +13,7 @@ class HalfedgeMesh:
     def read_file(self, filename):
         """Determine the type of file and use the appropriate parser.
 
-        filename - the file name, which might include the directory as well
+        Returns vertices, halfedges, and facets
         """
         pass
 
@@ -38,20 +38,20 @@ class HalfedgeMesh:
 
 class Vertex:
 
-    def __init__(self, x, y, z, index):
-        """Create a vertex with given index at given point.
+    def __init__(self, x, y, z, id):
+        """Create a vertex with given id at given point.
 
         x     - x-coordinate of the point
         y     - y-coordinate of the point
         z     - z-coordinate of the point
-        index - integer id of this vertex
+        id - integer id of this vertex
         """
 
         self.x = x
         self.y = y
         self.z = z
 
-        self.index = index
+        self.id = id
 
     def __eq__(self, other):
         return (self.x - other.x) < config.EPSILON and \
@@ -66,16 +66,16 @@ class Vertex:
 
 class Facet:
 
-    def __init__(self, a, b, c, index):
-        """Create a facet with the given index with three vertices.
+    def __init__(self, a, b, c, id):
+        """Create a facet with the given id with three vertices.
 
         a, b, c - indices for the vertices in the facet, counter clockwise.
-        index - index of facet in the mesh
+        id - id of facet in the mesh
         """
         self.a = a
         self.b = b
         self.c = c
-        self.index = index
+        self.id = id
 
     def __eq__(self, other):
         return self.a == other.a and self.b == other.b and self.c == other.c
@@ -88,8 +88,8 @@ class Facet:
 
 class Halfedge:
 
-    def __init__(self, index):
-        """Create a halfedge with given index.
+    def __init__(self, id):
+        """Create a halfedge with given id.
         """
         pass
 
