@@ -28,6 +28,19 @@ Here I run through some basic manipulations of a mesh.
     
 Please refer to the documentation for more functionality.
 
+##Test
+
+In order to run the tests in this project you must have py.test. To install
+py.test you can either 
+
+    pip install -U pytest # or
+    easy_install -U pytest
+    
+then you can simply run py.test at the top level directory. Make sure
+halfedge_mesh is importable, for example by typing once:
+
+    pip install -e .   # install package using setup.py in editable mode
+
 ##Help
 Email me, Carlos Rojas at <crojas@ucdavis.edu>
 
