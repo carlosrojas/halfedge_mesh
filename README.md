@@ -29,11 +29,14 @@ Here I run through some basic manipulations of a mesh.
 Please refer to the documentation for more functionality.
 
 ##Help
-Email me, Carlos Rojas at <iam@carlosrojas.me>
+Email me, Carlos Rojas at <crojas@ucdavis.edu>
 
 ##Contribution Guidelines
 Please follow the [PEP 8 style guide for python](http://legacy.python.org/dev/peps/pep-0008/)
 and the [writing good commit guideline](https://github.com/erlang/otp/wiki/Writing-good-commit-messages)
+
+Here are some helpful articles [git commits](http://ablogaboutcode.com/2011/03/23/proper-git-commit-messages-and-an-elegant-git-history/),
+and [clean git history](https://www.reviewboard.org/docs/codebase/dev/git/clean-commits/).
 
 ##License
 Halfedge Mesh is released under the MIT License.
