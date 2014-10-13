@@ -1,11 +1,10 @@
 import halfedge_mesh
 import pytest
 
-
 class TestHalfedgeMesh:
     @pytest.fixture()
     def cube_off_mesh(self, scope="module"):
-        return halfedge_mesh.HalfedgeMesh("test_data/cube.off")
+        return halfedge_mesh.HalfedgeMesh("data/cube.off")
 
     def test_halfedgemesh_vertices_are_in_order_with_cubeoff(self,
                                                              cube_off_mesh):
