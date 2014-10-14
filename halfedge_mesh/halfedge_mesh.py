@@ -1,29 +1,72 @@
 import config
 
-
 class HalfedgeMesh:
-
-    def __init__(self, filename = ""):
+    def __init__(self, filename="", vertices=[], halfedge=[], facets=[]):
         """Make an empty halfedge mesh."""
 
-        self.vertices = []
-        self.halfedges = []
-        self.facets = []
+        self.vertices = vertices
+        self.halfedges = halfedge
+        self.facets = facets
+
+        self.read_file(filename)
 
     def read_file(self, filename):
         """Determine the type of file and use the appropriate parser.
 
-        Returns vertices, halfedges, and facets
+        Returns a HalfedgeMesh
         """
-        pass
+        try:
+            with open(filename, 'r') as file:
 
-    @staticmethod
+                first_line = file.readline().strip()
+
+                # TODO: build OBJ, PLY parsers
+                parser_dispatcher = {"OFF": self.parse_off(file),
+                                     "PLY": None,
+                                     "OBJ": None}
+
+                return parser_dispatcher[first_line]
+
+        except IOError as e:
+            print "I/O error({0}): {1}".format(e.errno, e.strerror)
+
+
+    def read_off_vertices(self, file_object, number_vertices):
+        """Read each line of the file_object and return a list of vertices. The
+        list will contain floats like so [x,y,z,x,y,z,...].
+
+        Return a list of vertices.
+        """
+        vertices = []
+
+        # Read all the vertices in
+        for index in range(number_vertices):
+            line = file_object.readline().split()
+
+            # convert strings to floats
+            line = map(float, line)
+
+            vertices.extend(line)
+
+        return vertices
+
     def parse_off(self, file_object):
         """Parses OFF files
 
-        Returns a set of vertices, halfedges, and facets.
+        Returns a HalfedgeMesh
         """
-        pass
+
+        Edges = {}
+
+        vertices = []
+        halfedges = []
+        facets = []
+
+        vertices_faces_edges_counts = map(int, file_object.readline().split())
+
+        number_vertices = vertices_faces_edges_counts[0]
+        vertices = self.read_off_vertices(file_object, number_vertices)
+
 
     def get_halfedge(self, u, v):
         """Retrieve halfedge with starting vertex u and target vertex v
@@ -37,8 +80,7 @@ class HalfedgeMesh:
 
 
 class Vertex:
-
-    def __init__(self, x, y, z, id):
+    def __init__(self, x, y, z, ):
         """Create a vertex with given id at given point.
 
         x     - x-coordinate of the point
@@ -65,7 +107,6 @@ class Vertex:
 
 
 class Facet:
-
     def __init__(self, a, b, c, id):
         """Create a facet with the given id with three vertices.
 
@@ -87,7 +128,6 @@ class Facet:
 
 
 class Halfedge:
-
     def __init__(self, id):
         """Create a halfedge with given id.
         """
