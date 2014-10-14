@@ -6,14 +6,21 @@ class TestHalfedgeMesh:
     def cube_off_mesh(self, scope="module"):
         return halfedge_mesh.HalfedgeMesh("data/cube.off")
 
+    def test_test(self, cube_off_mesh):
+        assert False
+
     def test_halfedgemesh_vertices_are_in_order_with_cubeoff(self,
                                                              cube_off_mesh):
         # Tests parse_off since Vertex is just a basic class
         vertices = cube_off_mesh.vertices
 
         # cube vertices in order
-        pts = [8, 12, 18, 1, -1, -1, 1, -1, 1, -1, -1, 1, -1, -1, -1, 1, 1,
-               -0.999999, 0.999999, 1, 1.000001]
+        pts = [1, -1, -1,
+               1, -1,  1,
+              -1, -1,  1,
+              -1, -1, -1,
+               1,  1, -0.999999,
+               0.999999, 1, 1.000001]
 
         for index in range(0, len(vertices), 3):
             # Vertex(a,b,c, id) id doesn't matter so it is set to zero
