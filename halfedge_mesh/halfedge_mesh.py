@@ -2,14 +2,16 @@ import config
 
 # TODO: Reorder functions
 class HalfedgeMesh:
-    def __init__(self, filename=None, vertices=[], halfedge=[], facets=[]):
+    def __init__(self, filename=None, vertices=[], halfedges=[], facets=[]):
         """Make an empty halfedge mesh."""
 
         self.vertices = vertices
-        self.halfedges = halfedge
+        self.halfedges = halfedges
         self.facets = facets
+        self.edges = None
 
-        self.read_file(filename)
+        if filename:
+            self.vertices, self.halfedges, self.facets, self.edges = self.read_file(filename)
 
     def __eq__(self, other):
         # TODO: Test
@@ -50,7 +52,6 @@ class HalfedgeMesh:
         vertices = []
 
         # Read all the vertices in
-        self.read_lines_from_file(file_object)
         for index in range(number_vertices):
             line = file_object.readline().split()
 
@@ -60,7 +61,7 @@ class HalfedgeMesh:
 
         return vertices
 
-    def parse_build_halfedge_off(self, file_object, number_facets):
+    def parse_build_halfedge_off(self, file_object, number_facets, vertices):
         """Replicate:
 
         map< pair<unsigned int, unsigned int>, HalfEdge* > Edges;
@@ -107,20 +108,23 @@ class HalfedgeMesh:
 
             # For every (half)edge around the facet
             for i in range(3):
-                Edges[all_facet_halfedges[i]] = Halfedge()
-                Edges[all_facet_halfedges[i]].facet = facet
+                Edges[all_facet_edges[i]] = Halfedge()
+                Edges[all_facet_edges[i]].facet = facet
+                Edges[all_facet_edges[i]].vertex = vertices[all_facet_edges[i][1]]
+
+            facet.halfedges = [Edges[all_facet_edges[i]] for i in range(3)]
 
             for i in range(3):
-                Edges[all_facet_halfedges[i]].next = all_facet_halfedges[
-                    (i + 1) % 3]
+                Edges[all_facet_edges[i]].next = Edges[all_facet_edges[(i + 1) % 3]]
+                Edges[all_facet_edges[i]].prev = Edges[all_facet_edges[(i - 1) % 3]]
 
                 # reverse edge ordering of vertex, e.g. (1,2)->(2,1)
-                if all_facet_halfedges[i][2::-1] in Edges:
-                    Edges[all_facet_halfedges[i]].opposite = \
-                        Edges[all_facet_halfedges[i][2::-1]]
+                if all_facet_edges[i][2::-1] in Edges:
+                    Edges[all_facet_edges[i]].opposite = \
+                        Edges[all_facet_edges[i][2::-1]]
 
-                    Edges[all_facet_halfedges[i][2::-1]].opposite = \
-                    Edges[all_facet_halfedges[i]]
+                    Edges[all_facet_edges[i][2::-1]].opposite = \
+                        Edges[all_facet_edges[i]]
 
         return facets, Edges
 
@@ -139,12 +143,13 @@ class HalfedgeMesh:
         vertices = self.read_off_vertices(file_object, number_vertices)
 
         number_facets = vertices_faces_edges_counts[1]
-        facets, Edges = self.parse_build_halfedge_off(file_object, number_facets)
+        facets, Edges = self.parse_build_halfedge_off(file_object,
+                                                      number_facets, vertices)
 
         for key, value in Edges.iteritems():
             halfedges.append(value)
 
-        return HalfedgeMesh(None,vertices,halfedges,facets)
+        return vertices, halfedges, facets, Edges
 
     def get_halfedge(self, u, v):
         """Retrieve halfedge with starting vertex u and target vertex v
@@ -154,7 +159,8 @@ class HalfedgeMesh:
 
         Returns a halfedge
         """
-        pass
+        return self.edges[(u,v)]
+
 
 
 class Vertex:
@@ -202,19 +208,19 @@ class Facet:
         self.halfedges = halfedges
 
     def __eq__(self, other):
-        return self.a == other.a and self.b == other.b and self.c == other.c and
-        self.halfedges == other.halfedges
+        return self.a == other.a and self.b == other.b and self.c == other.c \
+        and self.halfedges == other.halfedges
 
 
-def __hash__(self):
-    return hash(self.halfedges) ^ hash(self.a) ^ hash(self.b) ^ hash(self.c)
-    ^ hash(self.index) ^ \
-      hash((self.halfedges, self.a, self.b, self.c, self.index))
+    def __hash__(self):
+        return hash(self.halfedges) ^ hash(self.a) ^ hash(self.b) ^ \
+               hash(self.c) ^ hash(self.index) ^ \
+               hash((self.halfedges, self.a, self.b, self.c, self.index))
 
 
 class Halfedge:
-    def __init__(self, next=None, opposite=None, next=None, prev=None,
-                 vertex=None, facet=None):
+    def __init__(self, next=None, opposite=None, prev=None, vertex=None,
+                 facet=None):
         """Create a halfedge with given index.
         """
         self.opposite = opposite
@@ -224,9 +230,7 @@ class Halfedge:
         self.facet = facet
 
     def __eq__(self, other):
-        return (self.opposite == other.opposite) and (self.next == other.next) \
-               and (self.prev == other.prev) and (self.vertex == other.vertex) \
-               and (self.facet == other.facet)
+        return (self.vertex == other.vertex) and (self.facet == other.facet)
 
     def __hash__(self):
         return hash(self.opposite) ^ hash(self.next) ^ hash(self.prev) ^ \
