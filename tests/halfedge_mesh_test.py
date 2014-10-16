@@ -3,16 +3,13 @@ import pytest
 
 
 class TestHalfedgeMesh:
-    @pytest.fixture()
-    def cube_off_mesh(self, scope="module"):
-        return halfedge_mesh.HalfedgeMesh("data/cube.off")
-
-    def test_test(self, cube_off_mesh):
-        assert False
+    @pytest.fixture(scope="module")
+    def cube_off_mesh(self):
+        return halfedge_mesh.HalfedgeMesh("data/cube.off", [213])
 
     def test_facet_test_halfedges_returns_all_halfedges(self, cube_off_mesh):
 
-        halfedges = cube_off_mesh.facets[0].halfedges()
+        halfedges = cube_off_mesh.facets[0].halfedges
 
         # Edge vertex 0 -> 1
         assert halfedges[0].vertex == halfedge_mesh.Vertex(1, -1, 1, 0)
@@ -24,8 +21,8 @@ class TestHalfedgeMesh:
         assert halfedges[1].prev.vertex == halfedge_mesh.Vertex(1, -1, 1, 0)
 
         # Edge vertex 2 -> 0
-        assert halfedges[2].vertex == halfedge_mesh.Vertex(-1, -1, 1, 0)
-        assert halfedges[2].prev.vertex == halfedge_mesh.Vertex(1, -1, -1, 0)
+        assert halfedges[2].vertex == halfedge_mesh.Vertex(1, -1, -1, 0)
+        assert halfedges[2].prev.vertex == halfedge_mesh.Vertex(-1, -1, 1, 0)
 
     def test_facet_eq_correct_for_same_object_and_diff_objects(self,
                                                                cube_off_mesh):
@@ -48,11 +45,13 @@ class TestHalfedgeMesh:
                1, 1, -0.999999,
                0.999999, 1, 1.000001]
 
+        count = 0
         for index in range(0, len(vertices), 3):
             # Vertex(a,b,c, index) index doesn't matter so it is set to zero
-            assert vertices[index] == halfedge_mesh.Vertex(pts[index],
+            assert vertices[count] == halfedge_mesh.Vertex(pts[index],
                                                            pts[index + 1],
-                                                           pts[index + 2], 0)
+                                                           pts[index + 2], count)
+            count += 1
 
     def test_halfedgemesh_vertices_in_facet_exists_with_cubeoff(self,
                                                                 cube_off_mesh):
@@ -78,8 +77,8 @@ class TestHalfedgeMesh:
         assert five_six.prev.vertex.index == 5
 
         one_two = cube_off_mesh.get_halfedge(1, 2)
-        assert one_two.vertex.index == 1
-        assert one_two.prev.index == 2
+        assert one_two.vertex.index == 2
+        assert one_two.prev.vertex.index == 1
 
     def test_halfedge_opposite_correct_vertices_with_cubeoff(self,
                                                              cube_off_mesh):
@@ -97,7 +96,7 @@ class TestHalfedgeMesh:
         assert four_one.opposite.prev.vertex.index == 1
 
     def test_halfedge_eq_correct_for_same_and_object_and_diff_objects(self,
-                                                              cube_off_mesh):
+                                                                      cube_off_mesh):
 
         zero_two = cube_off_mesh.get_halfedge(0, 2)
         assert zero_two == zero_two
