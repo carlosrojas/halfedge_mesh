@@ -36,8 +36,8 @@ py.test you can either
     pip install -U pytest # or
     easy_install -U pytest
     
-then you can simply run py.test in the tests directory. Make sure halfedge_mesh 
-is importable, for example by typing once:
+then you can simply run py.test in the home project directory. Make sure 
+halfedge_mesh is importable, for example by typing once:
 
     pip install -e .   # install package using setup.py in editable mode
 
