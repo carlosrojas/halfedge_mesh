@@ -5,7 +5,7 @@ import pytest
 class TestHalfedgeMesh:
     @pytest.fixture(scope="module")
     def cube_off_mesh(self):
-        return halfedge_mesh.HalfedgeMesh("data/cube.off", [213])
+        return halfedge_mesh.HalfedgeMesh("tests/data/cube.off", [213])
 
     def test_facet_test_halfedges_returns_all_halfedges(self, cube_off_mesh):
 
