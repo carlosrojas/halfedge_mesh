@@ -62,8 +62,11 @@ class HalfedgeMesh:
         return vertices
 
     def parse_build_halfedge_off(self, file_object, number_facets, vertices):
-        """Replicate:
+        """Link to the code:
+        http://stackoverflow.com/questions/15365471/initializing-half-edge-
+        data-structure-from-vertices
 
+        Pseudo code:
         map< pair<unsigned int, unsigned int>, HalfEdge* > Edges;
 
         for each face F
@@ -209,7 +212,7 @@ class Facet:
 
     def __eq__(self, other):
         return self.a == other.a and self.b == other.b and self.c == other.c \
-        and self.halfedges == other.halfedges
+        and self.index == other.index and self.halfedges == other.halfedges
 
 
     def __hash__(self):

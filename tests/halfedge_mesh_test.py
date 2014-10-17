@@ -47,7 +47,7 @@ class TestHalfedgeMesh:
 
         count = 0
         for index in range(0, len(vertices), 3):
-            # Vertex(a,b,c, index) index doesn't matter so it is set to zero
+            # Vertex(a,b,c, index)
             assert vertices[count] == halfedge_mesh.Vertex(pts[index],
                                                            pts[index + 1],
                                                            pts[index + 2], count)
