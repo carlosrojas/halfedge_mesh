@@ -30,6 +30,7 @@ Please refer to the documentation for more functionality.
 
 ##Test
 
+###Option 1
 In order to run the tests in this project you must have py.test. To install
 py.test you can either 
 
@@ -40,6 +41,13 @@ then you can simply run py.test in the home project directory. Make sure
 halfedge_mesh is importable, for example by typing once:
 
     pip install -e .   # install package using setup.py in editable mode
+
+###Option 2
+Simply run
+
+    python setup.py test
+
+Note: this will not work wih python 2.6 due to argparse dependency.
 
 ##Help
 Email me, Carlos Rojas at <crojas@ucdavis.edu>
