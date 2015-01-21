@@ -47,7 +47,7 @@ Simply run
 
     python setup.py test
 
-Note: this will not work wih python 2.6 due to argparse dependency.
+Note: this will not work with python 2.6 due to argparse dependency.
 
 ##Help
 Email me, Carlos Rojas at <crojas@ucdavis.edu>
