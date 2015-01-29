@@ -8,7 +8,6 @@ class TestHalfedgeMesh:
         return halfedge_mesh.HalfedgeMesh("tests/data/cube.off", [213])
 
     def test_facet_test_halfedges_returns_all_halfedges(self, cube_off_mesh):
-
         halfedges = cube_off_mesh.facets[0].halfedges
 
         # Edge vertex 0 -> 1
@@ -104,3 +103,19 @@ class TestHalfedgeMesh:
         four_one = cube_off_mesh.get_halfedge(4, 1)
         assert zero_two != four_one
 
+    def test_get_normals(self, cube_off_mesh):
+        normals = cube_off_mesh.get_normals()
+        import numpy as np
+
+        assert np.allclose(np.array([0,-1,0]), np.asarray(normals[0]), atol=1e-6)
+        assert np.allclose(np.array([0,1,0]), np.asarray(normals[1]), atol=1e-6)
+        assert np.allclose(np.array([1,0,0]), np.asarray(normals[2]), atol=1e-6)
+        assert np.allclose(np.array([0,0,1]), np.asarray(normals[3]), atol=1e-6)
+        assert np.allclose(np.array([-1,0,0]), np.asarray(normals[4]), atol=1e-6)
+        assert np.allclose(np.array([0,0,-1]), np.asarray(normals[5]), atol=1e-6)
+        assert np.allclose(np.array([0,-1,0]), np.asarray(normals[6]), atol=1e-6)
+        assert np.allclose(np.array([1,0,0]), np.asarray(normals[7]), atol=1e-6)
+        assert np.allclose(np.array([0,0,-1]), np.asarray(normals[8]), atol=1e-6)
+        assert np.allclose(np.array([0,1,0]), np.asarray(normals[9]), atol=1e-6)
+        assert np.allclose(np.array([-1,0,0]), np.asarray(normals[10]), atol=1e-6)
+        assert np.allclose(np.array([0,0,1]), np.asarray(normals[11]), atol=1e-6)

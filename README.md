@@ -25,12 +25,21 @@ Here I run through some basic manipulations of a mesh.
     # Get the halfedge that starts at vertex 25 and ends at vertex 50
     mesh.get_halfedge(25, 50)
     
-    
+Note: For the meanwhile it requires numpy for running the get_normals() 
+function in the HalfedgeMesh class.
+
 Please refer to the documentation for more functionality.
 
 ##Test
 
 ###Option 1
+Simply run
+
+    python setup.py test
+
+Note: this will not work with python 2.6 due to argparse dependency.
+
+###Option 2
 In order to run the tests in this project you must have py.test. To install
 py.test you can either 
 
@@ -41,13 +50,6 @@ then you can simply run py.test in the home project directory. Make sure
 halfedge_mesh is importable, for example by typing once:
 
     pip install -e .   # install package using setup.py in editable mode
-
-###Option 2
-Simply run
-
-    python setup.py test
-
-Note: this will not work with python 2.6 due to argparse dependency.
 
 ##Help
 Email me, Carlos Rojas at <crojas@ucdavis.edu>
@@ -61,5 +63,3 @@ and [clean git history](https://www.reviewboard.org/docs/codebase/dev/git/clean-
 
 ##License
 Halfedge Mesh is released under the MIT License.
-
-##Credits
