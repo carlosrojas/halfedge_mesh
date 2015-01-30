@@ -1,4 +1,5 @@
 import config
+import math
 
 # TODO: Reorder functions
 
@@ -172,18 +173,9 @@ class HalfedgeMesh:
         return self.edges[(u, v)]
 
     def get_normals(self):
-        """Return normals of each face in the same order as the faces, i.e. 
+        """Return normals of each face in the same order as the faces, i.e.
         there is a 1-1 mapping of facets and normals.
-
-        Note: numpy is needed
         """
-        try:
-            import numpy as np
-            import numpy.linalg as la
-        except ImportError:
-            #TODO: Implement
-           raise ImportError("Do not have numpy installed") 
-
         normals = []
 
         for facet in self.facets:
@@ -196,16 +188,16 @@ class HalfedgeMesh:
             vertex_c = [ self.vertices[facet.c].x, self.vertices[facet.c].y,
                          self.vertices[facet.c].z ]
             # create edge 1 with vector difference
-            edge1 = np.asarray([ u - v for u, v in zip(vertex_b, vertex_a)])
+            edge1 = [ u - v for u, v in zip(vertex_b, vertex_a)]
             # create edge 2 ...
-            edge2 = np.asarray([ u - v for u, v in zip(vertex_c, vertex_b) ])
+            edge2 = [ u - v for u, v in zip(vertex_c, vertex_b) ]
             # cross product
-            normal = np.cross(edge1, edge2)
+            normal = cross_product(edge1, edge2)
 
-            normal /= la.norm(normal)
+            normal = map(lambda x: x / norm(normal), normal)
 
-            # add to normals; convert to python list
-            normals.append(normal.tolist())
+            # add to normals
+            normals.append(normal)
 
         return normals
 
@@ -287,3 +279,20 @@ class Halfedge:
                                                          self.prev,
                                                          self.vertex,
                                                          self.facet))
+
+def norm(vec):
+    """ Return the Euclidean norm of a 3d vector.
+
+    vec - a 3d vector expressed as a list of 3 floats.
+    """
+    return math.sqrt(reduce((lambda x, y: x + y*y), vec, 0.0))
+
+def cross_product(v1, v2):
+    """ Return the cross product of v1, v2.
+
+    v1, v2 - 3d vector expressed as a list of 3 floats.
+    """
+    x3 =   v1[1]*v2[2] - v2[1]*v1[2]
+    y3 = -(v1[0]*v2[2] - v2[0]*v1[2])
+    z3 =   v1[0]*v2[1] - v2[0]*v1[1]
+    return [x3, y3, z3]

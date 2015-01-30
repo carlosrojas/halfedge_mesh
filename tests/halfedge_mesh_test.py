@@ -1,5 +1,6 @@
 import halfedge_mesh
 import pytest
+import math
 
 
 class TestHalfedgeMesh:
@@ -119,3 +120,31 @@ class TestHalfedgeMesh:
         assert np.allclose(np.array([0,1,0]), np.asarray(normals[9]), atol=1e-6)
         assert np.allclose(np.array([-1,0,0]), np.asarray(normals[10]), atol=1e-6)
         assert np.allclose(np.array([0,0,1]), np.asarray(normals[11]), atol=1e-6)
+
+    def test_internal_norm(self):
+        assert halfedge_mesh.halfedge_mesh.norm([0,-1,0]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([0,1,0]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([1,0,0]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([0,0,1]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([-1,0,0]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([0,0,-1]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([0,-1,0]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([1,0,0]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([0,0,-1]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([0,1,0]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([-1,0,0]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([0,0,1]) == 1.0
+        assert halfedge_mesh.halfedge_mesh.norm([1,1,1]) == math.sqrt(3)
+
+    def test_internal_cross_product(self):
+        v_i = [1,0,0]
+        v_j = [0,1,0]
+        v_k = [0,0,1]
+        assert halfedge_mesh.halfedge_mesh.cross_product(v_i, v_i) == [0,0,0]
+        assert halfedge_mesh.halfedge_mesh.cross_product(v_i, v_j) == v_k
+        assert halfedge_mesh.halfedge_mesh.cross_product(v_j, v_k) == v_i
+        assert halfedge_mesh.halfedge_mesh.cross_product(v_k, v_i) == v_j
+        assert halfedge_mesh.halfedge_mesh.cross_product(v_j, v_i) == map(lambda x: -x, v_k)
+        assert halfedge_mesh.halfedge_mesh.cross_product(v_i, v_k) == map(lambda x: -x, v_j)
+        assert halfedge_mesh.halfedge_mesh.cross_product(v_k, v_j) == map(lambda x: -x, v_i)
+
