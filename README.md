@@ -25,9 +25,6 @@ Here I run through some basic manipulations of a mesh.
     # Get the halfedge that starts at vertex 25 and ends at vertex 50
     mesh.get_halfedge(25, 50)
     
-Note: For the meanwhile it requires numpy for running the get_normals() 
-function in the HalfedgeMesh class.
-
 Please refer to the documentation for more functionality.
 
 ##Test
