@@ -187,29 +187,10 @@ class HalfedgeMesh:
         normals = []
 
         for facet in self.facets:
-            # TODO: calculate normal calculation inside the facet class and
-            # just iterate through the facets
-            vertex_a = [ self.vertices[facet.a].x, self.vertices[facet.a].y,
-                         self.vertices[facet.a].z ]
-
-            vertex_b = [ self.vertices[facet.b].x, self.vertices[facet.b].y,
-                         self.vertices[facet.b].z ]
-
-            vertex_c = [ self.vertices[facet.c].x, self.vertices[facet.c].y,
-                         self.vertices[facet.c].z ]
-            # create edge 1 with vector difference
-            edge1 = [ u - v for u, v in zip(vertex_b, vertex_a)]
-            # create edge 2 ...
-            edge2 = [ u - v for u, v in zip(vertex_c, vertex_b) ]
-            # cross product
-            normal = cross_product(edge1, edge2)
-
-            normal = map(lambda x: x / norm(normal), normal)
-
-            # add to normals
-            normals.append(normal)
+            normals.append(facet.get_normal())
 
         return normals
+
 
 class Vertex:
 
@@ -262,6 +243,31 @@ class Facet:
         return hash(self.halfedge) ^ hash(self.a) ^ hash(self.b) ^ \
             hash(self.c) ^ hash(self.index) ^ \
             hash((self.halfedges, self.a, self.b, self.c, self.index))
+
+    def get_normal(self):
+        """Calculate the normal of facet
+
+        Return a python list that contains the normal
+        """
+        vertex_a = [self.halfedge.vertex.x, self.halfedge.vertex.y,
+                    self.halfedge.vertex.z]
+
+        vertex_b = [self.halfedge.next.vertex.x, self.halfedge.next.vertex.y,
+                    self.halfedge.next.vertex.z]
+
+        vertex_c = [self.halfedge.prev.vertex.x, self.halfedge.prev.vertex.y,
+                    self.halfedge.prev.vertex.z]
+
+        # create edge 1 with vector difference
+        edge1 = [u - v for u, v in zip(vertex_b, vertex_a)]
+        # create edge 2 ...
+        edge2 = [u - v for u, v in zip(vertex_c, vertex_b)]
+        # cross product
+        normal = cross_product(edge1, edge2)
+
+        normal = map(lambda x: x / norm(normal), normal)
+
+        return normal
 
 
 class Halfedge:
