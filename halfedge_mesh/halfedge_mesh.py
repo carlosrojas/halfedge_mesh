@@ -131,7 +131,7 @@ class HalfedgeMesh:
                 Edges[all_facet_edges[i]].vertex = vertices[
                     all_facet_edges[i][1]]
 
-            facet.halfedge = Edges[all_facet_edges[i]]
+            facet.halfedge = Edges[all_facet_edges[0]]
 
             for i in range(3):
                 Edges[all_facet_edges[i]].next = Edges[
@@ -265,7 +265,7 @@ class Facet:
         # cross product
         normal = cross_product(edge1, edge2)
 
-        normal = map(lambda x: x / norm(normal), normal)
+        normal = normalize(normal)
 
         return normal
 
@@ -295,6 +295,89 @@ class Halfedge:
                                                          self.vertex,
                                                          self.facet))
 
+    # TODO: test convex
+    def get_angle_normal(self):
+        """Calculate the angle between the normals that neighbor the edge.
+
+        Return an angle in radians
+        """
+        a = self.facet.get_normal()
+        b = self.opposite.facet.get_normal()
+
+        dir = [self.vertex.x - self.prev.vertex.x,
+               self.vertex.y - self.prev.vertex.y,
+               self.vertex.z - self.prev.vertex.z]
+        dir = normalize(dir)
+
+        ab = dot(a, b)
+        args = ab / (norm(a) * norm(b))
+
+        if allclose(args, 1):
+            args = 1
+        elif allclose(args, -1):
+            args = -1
+
+        assert (args <= 1.0 and args >= -1.0)
+
+        angle = math.acos(args)
+
+        if not (angle % math.pi == 0):
+            e = cross_product(a, b)
+            e = normalize(e)
+
+            vec = dir
+            vec = normalize(vec)
+
+            if (allclose(vec, e)):
+                return angle
+            else:
+                return -angle
+        else:
+            return 0
+
+
+def allclose(v1, v2):
+    """Compare if v1 and v2 are close
+
+    v1, v2 - any numerical type or list/tuple of numerical types
+
+    Return bool if vectors are close, up to some epsilon specified in config.py
+    """
+
+    v1 = make_iterable(v1)
+    v2 = make_iterable(v2)
+
+    elementwise_compare = map(
+        (lambda x, y: abs(x - y) < config.EPSILON), v1, v2)
+    return reduce((lambda x, y: x and y), elementwise_compare)
+
+
+def make_iterable(obj):
+    """Check if obj is iterable, if not return an iterable with obj inside it.
+    Otherwise just return obj.
+
+    obj - any type
+
+    Return an iterable
+    """
+    try:
+        iter(obj)
+    except:
+        return [obj]
+    else:
+        return obj
+
+
+def dot(v1, v2):
+    """Dot product(inner product) of v1 and v2
+
+    v1, v2 - python list
+
+    Return v1 dot v2
+    """
+    elementwise_multiply = map((lambda x, y: x * y), v1, v2)
+    return reduce((lambda x, y: x + y), elementwise_multiply)
+
 
 def norm(vec):
     """ Return the Euclidean norm of a 3d vector.
@@ -302,6 +385,16 @@ def norm(vec):
     vec - a 3d vector expressed as a list of 3 floats.
     """
     return math.sqrt(reduce((lambda x, y: x + y * y), vec, 0.0))
+
+
+def normalize(vec):
+    """Normalize a vector
+
+    vec - python list
+
+    Return normalized vector
+    """
+    return map(lambda x: x / norm(vec), vec)
 
 
 def cross_product(v1, v2):
