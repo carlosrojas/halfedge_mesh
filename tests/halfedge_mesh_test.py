@@ -8,21 +8,22 @@ class TestHalfedgeMesh:
     def cube_off_mesh(self):
         return halfedge_mesh.HalfedgeMesh("tests/data/cube.off", [213])
 
-    def test_facet_test_halfedges_returns_all_halfedges(self, cube_off_mesh):
-        halfedges = cube_off_mesh.facets[0].halfedges
+    def test_facet_halfedges_loops_facet(self, cube_off_mesh):
+        halfedge = cube_off_mesh.facets[0].halfedge
 
-        # Edge vertex 0 -> 1
-        assert halfedges[0].vertex == halfedge_mesh.Vertex(1, -1, 1, 0)
-        assert halfedges[0].prev.vertex == halfedge_mesh.Vertex(1, -1, -1,
-                                                                0)
+        assert halfedge.next.next.next.vertex == halfedge.vertex
 
-        # Edge vertex 1 -> 2
-        assert halfedges[1].vertex == halfedge_mesh.Vertex(-1, -1, 1, 0)
-        assert halfedges[1].prev.vertex == halfedge_mesh.Vertex(1, -1, 1, 0)
+    def test_facet_halfedges_vertex_in_facet(self, cube_off_mesh):
+        halfedge = cube_off_mesh.facets[0].halfedge
 
-        # Edge vertex 2 -> 0
-        assert halfedges[2].vertex == halfedge_mesh.Vertex(1, -1, -1, 0)
-        assert halfedges[2].prev.vertex == halfedge_mesh.Vertex(-1, -1, 1, 0)
+        vertices = [ halfedge_mesh.Vertex(1, -1, 1, 0), 
+                     halfedge_mesh.Vertex(1, -1, -1, 0),
+                     halfedge_mesh.Vertex(-1, -1, 1, 0) ]
+
+        # make sure all vertices are in the facet described by halfedge
+        assert halfedge.vertex in vertices
+        assert halfedge.next.vertex in vertices
+        assert halfedge.next.next.vertex in vertices
 
     def test_facet_eq_correct_for_same_object_and_diff_objects(self,
                                                                cube_off_mesh):
