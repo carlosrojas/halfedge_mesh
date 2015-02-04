@@ -7,16 +7,26 @@ import math
 class HalfedgeMesh:
 
     def __init__(self, filename=None, vertices=[], halfedges=[], facets=[]):
-        """Make an empty halfedge mesh."""
+        """Make an empty halfedge mesh.
+
+           filename   - a string that holds the directory location and name of
+               the mesh
+            vertices  - a list of Vertex types
+            halfedges - a list of HalfEdge types
+            facets    - a list of Facet types
+        """
 
         self.vertices = vertices
         self.halfedges = halfedges
         self.facets = facets
+        # dictionary of all the edges given indexes
+        # TODO: Figure out if I need halfedges or if I should just use edges
+        # Which is faster?
         self.edges = None
 
         if filename:
-            self.vertices, self.halfedges, self.facets, self.edges = self.read_file(
-                filename)
+            self.vertices, self.halfedges, self.facets, self.edges = \
+                self.read_file( filename)
 
     def __eq__(self, other):
         # TODO: Test
@@ -144,9 +154,7 @@ class HalfedgeMesh:
 
         Returns a HalfedgeMesh
         """
-        vertices = []
-        halfedges = []
-        facets = []
+        facets, halfedges, vertices = [], [], []
 
         vertices_faces_edges_counts = map(int, file_object.readline().split())
 
@@ -179,6 +187,8 @@ class HalfedgeMesh:
         normals = []
 
         for facet in self.facets:
+            # TODO: calculate normal calculation inside the facet class and
+            # just iterate through the facets
             vertex_a = [ self.vertices[facet.a].x, self.vertices[facet.a].y,
                          self.vertices[facet.a].z ]
 
