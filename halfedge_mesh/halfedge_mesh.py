@@ -131,7 +131,7 @@ class HalfedgeMesh:
                 Edges[all_facet_edges[i]].vertex = vertices[
                     all_facet_edges[i][1]]
 
-            facet.halfedges = [Edges[all_facet_edges[i]] for i in range(3)]
+            facet.halfedge = Edges[all_facet_edges[i]]
 
             for i in range(3):
                 Edges[all_facet_edges[i]].next = Edges[
@@ -220,7 +220,6 @@ class Vertex:
         y     - y-coordinate of the point
         z     - z-coordinate of the point
         index - integer index of this vertex
-        halfedges = a list of halfedges targeting to this vertex.
         """
 
         self.x = x
@@ -228,7 +227,6 @@ class Vertex:
         self.z = z
 
         self.index = index
-        self.halfedges = halfedges
 
     def __eq__(self, other):
         return (self.x - other.x) < config.EPSILON and \
@@ -237,32 +235,31 @@ class Vertex:
 
     def __hash__(self):
         return hash(self.x) ^ hash(self.y) ^ hash(self.z) ^ hash(self.index) ^ \
-            hash(self.halfedges) ^ \
-            hash((self.x, self.y, self.z, self.index, self.halfedges))
+            hash((self.x, self.y, self.z, self.index ))
 
 
 class Facet:
 
-    def __init__(self, a=-1, b=-1, c=-1, index=None, halfedges=[]):
+    def __init__(self, a=-1, b=-1, c=-1, index=None, halfedge=None):
         """Create a facet with the given index with three vertices.
 
         a, b, c - indices for the vertices in the facet, counter clockwise.
         index - index of facet in the mesh
-        halfedges - a list of Halfedge types that belong to the facet
+        halfedge - a Halfedge that belongs to the facet
         """
         self.a = a
         self.b = b
         self.c = c
         self.index = index
-        # halfedges going ccw around this facet.
-        self.halfedges = halfedges
+        # halfedge going ccw around this facet.
+        self.halfedge = halfedge
 
     def __eq__(self, other):
         return self.a == other.a and self.b == other.b and self.c == other.c \
-            and self.index == other.index and self.halfedges == other.halfedges
+            and self.index == other.index and self.halfedge == other.halfedge
 
     def __hash__(self):
-        return hash(self.halfedges) ^ hash(self.a) ^ hash(self.b) ^ \
+        return hash(self.halfedge) ^ hash(self.a) ^ hash(self.b) ^ \
             hash(self.c) ^ hash(self.index) ^ \
             hash((self.halfedges, self.a, self.b, self.c, self.index))
 
@@ -280,7 +277,9 @@ class Halfedge:
         self.facet = facet
 
     def __eq__(self, other):
-        return (self.vertex == other.vertex) and (self.facet == other.facet)
+        # TODO Test more
+        return (self.vertex == other.vertex) and \
+               (self.prev.vertex == other.prev.vertex)
 
     def __hash__(self):
         return hash(self.opposite) ^ hash(self.next) ^ hash(self.prev) ^ \
