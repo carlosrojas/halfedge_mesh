@@ -26,7 +26,7 @@ class HalfedgeMesh:
 
         if filename:
             self.vertices, self.halfedges, self.facets, self.edges = \
-                self.read_file( filename)
+                self.read_file(filename)
 
     def __eq__(self, other):
         # TODO: Test
@@ -124,7 +124,7 @@ class HalfedgeMesh:
             all_facet_edges = zip(line[1:], line[2:])
             all_facet_edges.append((line[3], line[1]))
 
-            # For every (half)edge around the facet
+            # For every halfedge around the facet
             for i in range(3):
                 Edges[all_facet_edges[i]] = Halfedge()
                 Edges[all_facet_edges[i]].facet = facet
@@ -290,19 +290,21 @@ class Halfedge:
                                                          self.vertex,
                                                          self.facet))
 
+
 def norm(vec):
     """ Return the Euclidean norm of a 3d vector.
 
     vec - a 3d vector expressed as a list of 3 floats.
     """
-    return math.sqrt(reduce((lambda x, y: x + y*y), vec, 0.0))
+    return math.sqrt(reduce((lambda x, y: x + y * y), vec, 0.0))
+
 
 def cross_product(v1, v2):
     """ Return the cross product of v1, v2.
 
     v1, v2 - 3d vector expressed as a list of 3 floats.
     """
-    x3 =   v1[1]*v2[2] - v2[1]*v1[2]
-    y3 = -(v1[0]*v2[2] - v2[0]*v1[2])
-    z3 =   v1[0]*v2[1] - v2[0]*v1[1]
+    x3 = v1[1] * v2[2] - v2[1] * v1[2]
+    y3 = -(v1[0] * v2[2] - v2[0] * v1[2])
+    z3 = v1[0] * v2[1] - v2[0] * v1[1]
     return [x3, y3, z3]
