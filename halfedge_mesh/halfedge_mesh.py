@@ -216,7 +216,7 @@ class Vertex:
 
     def __hash__(self):
         return hash(self.x) ^ hash(self.y) ^ hash(self.z) ^ hash(self.index) ^ \
-            hash((self.x, self.y, self.z, self.index ))
+            hash((self.x, self.y, self.z, self.index))
 
 
 class Facet:
