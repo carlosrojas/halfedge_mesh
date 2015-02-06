@@ -180,21 +180,10 @@ class HalfedgeMesh:
         """
         return self.edges[(u, v)]
 
-    def get_normals(self):
-        """Return normals of each face in the same order as the faces, i.e.
-        there is a 1-1 mapping of facets and normals.
-        """
-        normals = []
-
-        for facet in self.facets:
-            normals.append(facet.get_normal())
-
-        return normals
-
 
 class Vertex:
 
-    def __init__(self, x=0, y=0, z=0, index=None, halfedges=[]):
+    def __init__(self, x=0, y=0, z=0, index=None):
         """Create a vertex with given index at given point.
 
         x     - x-coordinate of the point
@@ -209,14 +198,17 @@ class Vertex:
 
         self.index = index
 
-    def __eq__(self, other):
-        return (self.x - other.x) < config.EPSILON and \
-               (self.y - other.y) < config.EPSILON and \
-               (self.z - other.z) < config.EPSILON
+    def __eq__(x, y):
+        return x.__key() == y.__key() and type(x) == type(y)
+
+    def __key(self):
+        return (self.x, self.y, self.z, self.index)
 
     def __hash__(self):
-        return hash(self.x) ^ hash(self.y) ^ hash(self.z) ^ hash(self.index) ^ \
-            hash((self.x, self.y, self.z, self.index))
+        return hash(self.__key())
+
+    def get_vertex(self):
+        return [self.x, self.y, self.z]
 
 
 class Facet:
