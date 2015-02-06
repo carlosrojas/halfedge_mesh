@@ -1,5 +1,5 @@
 #Halfedge Mesh
-This is a small python library that will read OBJ and PLY mesh format files into
+This is a small python library that will read OFF mesh format files into
 a halfedge data structure. A halfedge data structure has two edges for a given
 edge in a mesh.
 
@@ -9,7 +9,7 @@ Here I run through some basic manipulations of a mesh.
 
     import halfedge_mesh
     
-    # Either .off or .py are supported
+    # .off are supported
     mesh = halfedge_mesh("my_meshes.off")
     
     # Returns a list of Vertex type (in order of file)--similarly for halfedges,
