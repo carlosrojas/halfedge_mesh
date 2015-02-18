@@ -386,6 +386,8 @@ def normalize(vec):
 
     Return normalized vector
     """
+    if norm(vec) < 1e-6:
+        return [0 for i in range(len(vec))]
     return map(lambda x: x / norm(vec), vec)
 
 
@@ -398,3 +400,12 @@ def cross_product(v1, v2):
     y3 = -(v1[0] * v2[2] - v2[0] * v1[2])
     z3 = v1[0] * v2[1] - v2[0] * v1[1]
     return [x3, y3, z3]
+
+def create_vector(p1, p2):
+    """Contruct a vector going from p1 to p2.
+
+    p1, p2 - python list wth coordinates [x,y,z].
+
+    Return a list [x,y,z] for the coordinates of vector
+    """ 
+    return map((lambda x,y: x-y), p2, p1)

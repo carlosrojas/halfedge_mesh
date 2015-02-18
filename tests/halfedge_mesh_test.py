@@ -215,3 +215,15 @@ def test_normalize_vectors():
     assert halfedge_mesh.allclose(
         halfedge_mesh.normalize([100000., 1222222., 30000000]),
         [0.00333055,  0.04070674,  0.99916559])
+
+    assert halfedge_mesh.allclose(halfedge_mesh.normalize([0,0,0]), [0,0,0])
+
+def test_create_vector():
+    p1 = [0,0,0]
+    p2 = [-1,-1,-1]
+    v = halfedge_mesh.create_vector(p1, p2)
+    assert halfedge_mesh.allclose(v, [-1,-1,-1])
+
+    p3 = [4,4,4]
+    v = halfedge_mesh.create_vector(p2, p3)
+    assert halfedge_mesh.allclose(v, [5,5,5])
