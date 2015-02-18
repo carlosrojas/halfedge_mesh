@@ -8,3 +8,4 @@ from halfedge_mesh import dot
 from halfedge_mesh import cross_product
 from halfedge_mesh import make_iterable
 from halfedge_mesh import allclose
+from halfedge_mesh import create_vector
