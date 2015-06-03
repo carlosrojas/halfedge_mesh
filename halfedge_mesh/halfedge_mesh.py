@@ -19,6 +19,7 @@ class HalfedgeMesh:
         self.vertices = vertices
         self.halfedges = halfedges
         self.facets = facets
+        self.filename = filename
         # dictionary of all the edges given indexes
         # TODO: Figure out if I need halfedges or if I should just use edges
         # Which is faster?
