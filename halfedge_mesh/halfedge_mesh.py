@@ -1,3 +1,4 @@
+import sys
 import config
 import math
 
@@ -27,13 +28,13 @@ class HalfedgeMesh:
 
         if filename:
             self.vertices, self.halfedges, self.facets, self.edges = \
-                self.read_file(filename)
+                    self.read_file(filename)
 
     def __eq__(self, other):
         # TODO: Test
         return self.vertices == other.vertices and \
             self.halfedges == other.halfedges and \
-            self.facets == other.facet
+            self.facets == other.facets
 
     def __hash__(self):
         return hash(self.vertices) ^ hash(self.halfedges) ^ hash(self.facets) ^ \
@@ -68,7 +69,7 @@ class HalfedgeMesh:
         vertices = []
 
         # Read all the vertices in
-        for index in range(number_vertices):
+        for index in xrange(number_vertices):
             line = file_object.readline().split()
 
             # convert strings to floats
@@ -105,9 +106,10 @@ class HalfedgeMesh:
         """
         Edges = {}
         facets = []
+        halfedge_count = 0
 
         # For each facet
-        for index in range(number_facets):
+        for index in xrange(number_facets):
             line = file_object.readline().split()
 
             # convert strings to ints
@@ -126,15 +128,16 @@ class HalfedgeMesh:
             all_facet_edges.append((line[3], line[1]))
 
             # For every halfedge around the facet
-            for i in range(3):
+            for i in xrange(3):
                 Edges[all_facet_edges[i]] = Halfedge()
                 Edges[all_facet_edges[i]].facet = facet
                 Edges[all_facet_edges[i]].vertex = vertices[
                     all_facet_edges[i][1]]
+                halfedge_count +=1
 
             facet.halfedge = Edges[all_facet_edges[0]]
 
-            for i in range(3):
+            for i in xrange(3):
                 Edges[all_facet_edges[i]].next = Edges[
                     all_facet_edges[(i + 1) % 3]]
                 Edges[all_facet_edges[i]].prev = Edges[
@@ -166,8 +169,11 @@ class HalfedgeMesh:
         facets, Edges = self.parse_build_halfedge_off(file_object,
                                                       number_facets, vertices)
 
+        i = 0
         for key, value in Edges.iteritems():
+            value.index = i
             halfedges.append(value)
+            i += 1
 
         return vertices, halfedges, facets, Edges
 
@@ -181,6 +187,47 @@ class HalfedgeMesh:
         """
         return self.edges[(u, v)]
 
+    def update_vertices(self, vertices):
+        # update vertices
+        vlist = []
+        i = 0
+        for v in vertices:
+            vlist.append(Vertex(v[0], v[1], v[2], i))
+            i += 1
+        self.vertices = vlist
+
+        hlist = []
+        # update all the halfedges
+        for he in self.halfedges:
+            vi = he.vertex.index
+            hlist.append(Halfedge(None, None, None, self.vertices[vi], None,
+                he.index))
+
+        flist = []
+        # update neighboring halfedges
+        for f in self.facets:
+            hi = f.halfedge.index
+            flist.append(Facet(f.a, f.b, f.c, f.index,  hlist[hi]))
+        self.facets = flist
+
+
+        i = 0
+        for he in self.halfedges:
+            nextid = he.next.index
+            oppid = he.opposite.index
+            previd = he.prev.index
+            
+            hlist[i].next = hlist[nextid]
+            hlist[i].opposite = hlist[oppid]
+            hlist[i].prev = hlist[previd] 
+
+        
+            fi = he.facet.index
+            hlist[i].facet = flist[fi]
+            i += 1
+
+        self.halfedges = hlist
+            
 
 class Vertex:
 
@@ -253,8 +300,11 @@ class Facet:
 
         # create edge 1 with vector difference
         edge1 = [u - v for u, v in zip(vertex_b, vertex_a)]
+        edge1 = normalize(edge1)
         # create edge 2 ...
         edge2 = [u - v for u, v in zip(vertex_c, vertex_b)]
+        edge2 = normalize(edge2)
+
         # cross product
         normal = cross_product(edge1, edge2)
 
@@ -266,7 +316,7 @@ class Facet:
 class Halfedge:
 
     def __init__(self, next=None, opposite=None, prev=None, vertex=None,
-                 facet=None):
+                 facet=None, index=None):
         """Create a halfedge with given index.
         """
         self.opposite = opposite
@@ -274,21 +324,20 @@ class Halfedge:
         self.prev = prev
         self.vertex = vertex
         self.facet = facet
+        self.index = index
 
     def __eq__(self, other):
         # TODO Test more
         return (self.vertex == other.vertex) and \
-               (self.prev.vertex == other.prev.vertex)
+               (self.prev.vertex == other.prev.vertex) and \
+               (self.index == other.index)
 
     def __hash__(self):
         return hash(self.opposite) ^ hash(self.next) ^ hash(self.prev) ^ \
-            hash(self.vertex) ^ hash(self.facet) ^ hash((self.opposite,
-                                                         self.next,
-                                                         self.prev,
-                                                         self.vertex,
-                                                         self.facet))
+                hash(self.vertex) ^ hash(self.facet) ^ hash(self.index) ^ \
+                hash((self.opposite, self.next, self.prev, self.vertex,
+                    self.facet, self.index))
 
-    # TODO: test convex
     def get_angle_normal(self):
         """Calculate the angle between the normals that neighbor the edge.
 
@@ -303,6 +352,7 @@ class Halfedge:
         dir = normalize(dir)
 
         ab = dot(a, b)
+
         args = ab / (norm(a) * norm(b))
 
         if allclose(args, 1):
@@ -388,7 +438,7 @@ def normalize(vec):
     Return normalized vector
     """
     if norm(vec) < 1e-6:
-        return [0 for i in range(len(vec))]
+        return [0 for i in xrange(len(vec))]
     return map(lambda x: x / norm(vec), vec)
 
 
