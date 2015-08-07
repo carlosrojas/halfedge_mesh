@@ -9,6 +9,14 @@ class TestHalfedgeMesh:
     def cube_off_mesh(self):
         return halfedge_mesh.HalfedgeMesh("tests/data/cube.off")
 
+    @pytest.fixture(scope="module")
+    def cube_large_off_mesh(self):
+        return halfedge_mesh.HalfedgeMesh("tests/data/cube_large.off")
+
+    @pytest.fixture(scope="module")
+    def cube_negative_off_mesh(self):
+        return halfedge_mesh.HalfedgeMesh("tests/data/cube4.off")
+
     def test_facet_halfedges_loops_facet(self, cube_off_mesh):
         halfedge = cube_off_mesh.facets[0].halfedge
         assert halfedge.next.next.next.vertex == halfedge.vertex
@@ -111,7 +119,9 @@ class TestHalfedgeMesh:
         four_one = cube_off_mesh.get_halfedge(4, 1)
         assert zero_two != four_one
 
-    def test_get_angle_normal(self, cube_off_mesh):
+    # test negative angles
+    def test_get_angle_normal(self, cube_off_mesh, cube_negative_off_mesh):
+    
         assert cube_off_mesh.facets[0].halfedge.vertex.index == 1
         assert cube_off_mesh.facets[0].halfedge.prev.vertex.index == 0
         assert halfedge_mesh.allclose(
@@ -129,11 +139,30 @@ class TestHalfedgeMesh:
         assert halfedge_mesh.allclose(
                 cube_off_mesh.facets[3].halfedge.next.get_angle_normal(), 0.0)
 
+        assert halfedge_mesh.allclose(cube_negative_off_mesh.get_halfedge(5,7).get_angle_normal(), -0.67967381890824385)
+        
+
     def test_get_vertex(self, cube_off_mesh):
         mesh_vertex = cube_off_mesh.vertices[0].get_vertex() 
         test_vertex = halfedge_mesh.Vertex(1,-1,-1,0).get_vertex()
         assert halfedge_mesh.allclose(mesh_vertex,test_vertex)
-                
+
+    def test_update_vertices(self, cube_off_mesh, cube_large_off_mesh):
+        tmp = halfedge_mesh.HalfedgeMesh()
+        tmp.vertices= cube_off_mesh.vertices[:]
+        tmp.halfedges = cube_off_mesh.halfedges[:]
+        tmp.facets= cube_off_mesh.facets[:]
+
+        v = []
+        for vertex in cube_large_off_mesh.vertices:
+           v.append([ vertex.x, vertex.y, vertex.z ])
+
+        tmp.update_vertices(v)
+        
+        for i in range(len(cube_large_off_mesh.halfedges)):
+            assert tmp.halfedges[i].get_angle_normal() == cube_large_off_mesh.halfedges[i].get_angle_normal()
+
+                        
 
 def test_internal_norm():
     assert halfedge_mesh.norm([0, -1, 0]) == 1.0
