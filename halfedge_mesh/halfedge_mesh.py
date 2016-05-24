@@ -133,6 +133,7 @@ class HalfedgeMesh:
                 Edges[all_facet_edges[i]].facet = facet
                 Edges[all_facet_edges[i]].vertex = vertices[
                     all_facet_edges[i][1]]
+                vertices[all_facet_edges[i][1]].halfedge = Edges[all_facet_edges[i]]
                 halfedge_count +=1
 
             facet.halfedge = Edges[all_facet_edges[0]]
@@ -160,6 +161,7 @@ class HalfedgeMesh:
         """
         facets, halfedges, vertices = [], [], []
 
+        # TODO Make ability to discard # lines
         vertices_faces_edges_counts = map(int, file_object.readline().split())
 
         number_vertices = vertices_faces_edges_counts[0]
@@ -216,28 +218,29 @@ class HalfedgeMesh:
             nextid = he.next.index
             oppid = he.opposite.index
             previd = he.prev.index
-            
+
             hlist[i].next = hlist[nextid]
             hlist[i].opposite = hlist[oppid]
-            hlist[i].prev = hlist[previd] 
+            hlist[i].prev = hlist[previd]
 
-        
+
             fi = he.facet.index
             hlist[i].facet = flist[fi]
             i += 1
 
         self.halfedges = hlist
-            
+
 
 class Vertex:
 
-    def __init__(self, x=0, y=0, z=0, index=None):
+    def __init__(self, x=0, y=0, z=0, index=None, halfedge=None):
         """Create a vertex with given index at given point.
 
-        x     - x-coordinate of the point
-        y     - y-coordinate of the point
-        z     - z-coordinate of the point
-        index - integer index of this vertex
+        x        - x-coordinate of the point
+        y        - y-coordinate of the point
+        z        - z-coordinate of the point
+        index    - integer index of this vertex
+        halfedge - a halfedge that points to the vertex
         """
 
         self.x = x
@@ -245,6 +248,8 @@ class Vertex:
         self.z = z
 
         self.index = index
+
+        self.halfedge = halfedge
 
     def __eq__(x, y):
         return x.__key() == y.__key() and type(x) == type(y)
@@ -458,5 +463,5 @@ def create_vector(p1, p2):
     p1, p2 - python list wth coordinates [x,y,z].
 
     Return a list [x,y,z] for the coordinates of vector
-    """ 
+    """
     return map((lambda x,y: x-y), p2, p1)
