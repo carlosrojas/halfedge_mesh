@@ -4,7 +4,6 @@ import math
 
 # TODO: Reorder functions
 
-
 class HalfedgeMesh:
 
     def __init__(self, filename=None, vertices=[], halfedges=[], facets=[]):
@@ -31,14 +30,13 @@ class HalfedgeMesh:
                     self.read_file(filename)
 
     def __eq__(self, other):
-        # TODO: Test
-        return self.vertices == other.vertices and \
-            self.halfedges == other.halfedges and \
-            self.facets == other.facets
+        return (isinstance(other, type(self)) and 
+            (self.vertices, self.halfedges, self.facets) ==
+            (other.vertices, other.halfedges, other.facets))
 
     def __hash__(self):
-        return hash(self.vertices) ^ hash(self.halfedges) ^ hash(self.facets) ^ \
-            hash((self.vertices, self.halfedges, self.facets))
+        return (hash(str(self.vertices)) ^ hash(str(self.halfedges)) ^ hash(str(self.facets)) ^ 
+            hash((str(self.vertices), str(self.halfedges), str(self.facets))))
 
     def read_file(self, filename):
         """Determine the type of file and use the appropriate parser.
@@ -48,17 +46,22 @@ class HalfedgeMesh:
         try:
             with open(filename, 'r') as file:
 
-                first_line = file.readline().strip()
+                first_line = file.readline().strip().upper()
+
+                if first_line != "OFF":
+                    raise ValueError("Filetype: " + first_line + " not accepted")
 
                 # TODO: build OBJ, PLY parsers
-                parser_dispatcher = {"OFF": self.parse_off(file),
-                                     "PLY": None,
-                                     "OBJ": None}
-
-                return parser_dispatcher[first_line]
+                parser_dispatcher = {"OFF": self.parse_off}
+                                      
+                return parser_dispatcher[first_line](file)
 
         except IOError as e:
             print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            return
+        except ValueError as e:
+            print "Value error: {0}:".format(e)
+            return
 
     def read_off_vertices(self, file_object, number_vertices):
         """Read each line of the file_object and return a list of Vertex types.
@@ -72,8 +75,12 @@ class HalfedgeMesh:
         for index in xrange(number_vertices):
             line = file_object.readline().split()
 
-            # convert strings to floats
-            line = map(float, line)
+            try:
+                # convert strings to floats
+                line = map(float, line)
+            except ValueError as e:
+                raise ValueError("vertices " + str(e))
+
             vertices.append(Vertex(line[0], line[1], line[2], index))
 
         return vertices
@@ -107,6 +114,7 @@ class HalfedgeMesh:
         Edges = {}
         facets = []
         halfedge_count = 0
+        #TODO Check if vertex index out of bounds
 
         # For each facet
         for index in xrange(number_facets):
