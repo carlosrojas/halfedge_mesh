@@ -1,7 +1,7 @@
 import halfedge_mesh
 import pytest
 import math
-
+import numpy as np
 
 class TestHalfedgeMesh:
 
@@ -17,11 +17,44 @@ class TestHalfedgeMesh:
     def cube_negative_off_mesh(self):
         return halfedge_mesh.HalfedgeMesh("tests/data/cube4.off")
 
-    def test_facet_halfedges_loops_facet(self, cube_off_mesh):
+#------------------------------------------------------------------------------
+    def test_eq_halfedge_mesh_cube(self, cube_off_mesh, cube_large_off_mesh):
+        assert cube_off_mesh != cube_large_off_mesh
+        assert cube_off_mesh == cube_off_mesh
+
+    def test_hash_halfedge_mesh_cube(self, cube_off_mesh):
+        constant_value = 10111970
+        test_dic = dict()
+        test_dic[cube_off_mesh] = constant_value
+        assert test_dic[cube_off_mesh] == constant_value
+
+    def test_read_file(self, cube_off_mesh):
+        assert cube_off_mesh.read_file("tests/data/cube.off") != None
+        assert cube_off_mesh.read_file("") == None
+        assert cube_off_mesh.read_file("tests/data/cube.ply") == None
+
+    def test_read_off_vertices(self, cube_off_mesh):
+        with open("tests/data/vertices_test.off") as vertices:
+            v = cube_off_mesh.read_off_vertices(vertices, 2)
+            assert np.allclose([v[0].x, v[0].y, v[0].z], [10.3, 42., 20.])
+            assert np.allclose([v[1].x, v[1].y, v[1].z], [33, 21.3, 94.1])
+
+    def test_parse_build_halfedge_off(self, cube_off_mesh):
+        with open("tests/data/faces_test.off") as faces:
+            vertices = [halfedge_mesh.Vertex(-1,-1,-1,i) for i in range(3)]
+            f, e = cube_off_mesh.parse_build_halfedge_off(faces, 1, vertices)
+            assert len(f) == 1
+            assert f[0].a == 0 and f[0].b == 1 and f[0].c == 2
+            assert f[0].index == 0
+            assert len(e) == 3
+
+#------------------------------------------------------------------------------
+
+    def test_halfedge_loop_around_facet(self, cube_off_mesh):
         halfedge = cube_off_mesh.facets[0].halfedge
         assert halfedge.next.next.next.vertex == halfedge.vertex
 
-    def test_facet_halfedges_vertex_in_facet(self, cube_off_mesh):
+    def test_vertices_in_facet(self, cube_off_mesh):
         halfedge = cube_off_mesh.facets[0].halfedge
 
         vertices = set([halfedge_mesh.Vertex(1.0, -1.0, 1.0, 1),
