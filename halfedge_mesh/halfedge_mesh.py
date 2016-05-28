@@ -6,7 +6,7 @@ import math
 
 class HalfedgeMesh:
 
-    def __init__(self, filename=None, vertices=[], halfedges=[], facets=[]):
+    def __init__(self, filename=None):
         """Make an empty halfedge mesh.
 
            filename   - a string that holds the directory location and name of
@@ -16,18 +16,13 @@ class HalfedgeMesh:
             facets    - a list of Facet types
         """
 
-        self.vertices = vertices
-        self.halfedges = halfedges
-        self.facets = facets
+        self.vertices = []
+        self.halfedges = []
+        self.facets = []
         self.filename = filename
-        # dictionary of all the edges given indexes
-        # TODO: Figure out if I need halfedges or if I should just use edges
-        # Which is faster?
-        self.edges = None
 
         if filename:
-            self.vertices, self.halfedges, self.facets, self.edges = \
-                    self.read_file(filename)
+            self.vertices, self.halfedges, self.facets = self.read_file(filename)
 
     def __eq__(self, other):
         return (isinstance(other, type(self)) and 
@@ -38,15 +33,28 @@ class HalfedgeMesh:
         return (hash(str(self.vertices)) ^ hash(str(self.halfedges)) ^ hash(str(self.facets)) ^ 
             hash((str(self.vertices), str(self.halfedges), str(self.facets))))
 
-    def read_file(self, filename):
-        """Determine the type of file and use the appropriate parser.
+    def discard_comments(self, file_object, current_token):
+        comment_character = "#"
 
-        Returns a HalfedgeMesh
+        while current_token == comment_character:
+            current_token = file_object.readline().split()[0].upper()
+
+        return current_token
+
+    def read_file(self, filename):
+        """Determine the type of file and use the appropriate parser. Currently,
+        only support .OFF files.
+
+        Returns a vertices, halfedges, facets
         """
         try:
             with open(filename, 'r') as file:
 
-                first_line = file.readline().strip().upper()
+                # TODO Make ability to discard # lines
+                first_line = file.readline().split()[0].upper()
+
+                if first_line == "#":
+                    first_line = self.discard_comments(file, first_line)
 
                 if first_line != "OFF":
                     raise ValueError("Filetype: " + first_line + " not accepted")
@@ -62,6 +70,30 @@ class HalfedgeMesh:
         except ValueError as e:
             print "Value error: {0}:".format(e)
             return
+
+    def parse_off(self, file_object):
+        """Parses .OFF file
+
+        Returns a vertices, halfedges, facets
+        """
+        facets, halfedges, vertices = [], [], []
+
+        vertices_faces_edges_counts = map(int, file_object.readline().split())
+
+        number_vertices = vertices_faces_edges_counts[0]
+        vertices = self.read_off_vertices(file_object, number_vertices)
+
+        number_facets = vertices_faces_edges_counts[1]
+        facets, Edges = self.parse_build_halfedge_off(file_object,
+                                                      number_facets, vertices)
+
+        i = 0
+        for key, value in Edges.iteritems():
+            value.index = i
+            halfedges.append(value)
+            i += 1
+
+        return vertices, halfedges, facets
 
     def read_off_vertices(self, file_object, number_vertices):
         """Read each line of the file_object and return a list of Vertex types.
@@ -162,30 +194,6 @@ class HalfedgeMesh:
 
         return facets, Edges
 
-    def parse_off(self, file_object):
-        """Parses OFF files
-
-        Returns a HalfedgeMesh
-        """
-        facets, halfedges, vertices = [], [], []
-
-        # TODO Make ability to discard # lines
-        vertices_faces_edges_counts = map(int, file_object.readline().split())
-
-        number_vertices = vertices_faces_edges_counts[0]
-        vertices = self.read_off_vertices(file_object, number_vertices)
-
-        number_facets = vertices_faces_edges_counts[1]
-        facets, Edges = self.parse_build_halfedge_off(file_object,
-                                                      number_facets, vertices)
-
-        i = 0
-        for key, value in Edges.iteritems():
-            value.index = i
-            halfedges.append(value)
-            i += 1
-
-        return vertices, halfedges, facets, Edges
 
     def get_halfedge(self, u, v):
         """Retrieve halfedge with starting vertex u and target vertex v
