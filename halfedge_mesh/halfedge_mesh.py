@@ -2,8 +2,8 @@ import sys
 import config
 import math
 
-# TODO: Reorder functions
 
+# TODO: Reorder functions
 class HalfedgeMesh:
 
     def __init__(self, filename=None):
@@ -84,14 +84,8 @@ class HalfedgeMesh:
         vertices = self.read_off_vertices(file_object, number_vertices)
 
         number_facets = vertices_faces_edges_counts[1]
-        facets, Edges = self.parse_build_halfedge_off(file_object,
+        facets, halfdges = self.parse_build_halfedge_off(file_object,
                                                       number_facets, vertices)
-
-        i = 0
-        for key, value in Edges.iteritems():
-            value.index = i
-            halfedges.append(value)
-            i += 1
 
         return vertices, halfedges, facets
 
@@ -145,7 +139,9 @@ class HalfedgeMesh:
         """
         Edges = {}
         facets = []
+        halfedges = []
         halfedge_count = 0
+
         #TODO Check if vertex index out of bounds
 
         # For each facet
@@ -156,96 +152,47 @@ class HalfedgeMesh:
             line = map(int, line)
 
             # TODO: make general to support non-triangular meshes
-            # Facets vertices are in counter-clockwise order
+            # facets vertices are in counter-clockwise order
             facet = Facet(line[1], line[2], line[3], index)
             facets.append(facet)
 
             # create pairing of vertices for example if the vertices are
             # verts = [1,2,3] then zip(verts, verts[1:]) = [(1,2),(2,3)]
             # note: we skip line[0] because it represents the number of vertices
-            # in the facet.
-            all_facet_edges = zip(line[1:], line[2:])
-            all_facet_edges.append((line[3], line[1]))
+            # in the facet. add (3,1) at the end.
+            facet_edges = zip(line[1:], line[2:]) + [(line[3], line[1])]
 
             # For every halfedge around the facet
             for i in xrange(3):
-                Edges[all_facet_edges[i]] = Halfedge()
-                Edges[all_facet_edges[i]].facet = facet
-                Edges[all_facet_edges[i]].vertex = vertices[
-                    all_facet_edges[i][1]]
-                vertices[all_facet_edges[i][1]].halfedge = Edges[all_facet_edges[i]]
+                current_halfedge = Halfedge()
+                current_halfedge.facet = facet.index
+                current_halfedge.vertex = vertices[facet_edges[i][1]].index
+                vertices[facet_edges[i][1]].halfedge = halfedge_count
+                current_halfedge.index = halfedge_count
+                halfedges.append(current_halfedge)
+                Edges[facet_edges[i]] = current_halfedge
                 halfedge_count +=1
 
-            facet.halfedge = Edges[all_facet_edges[0]]
+            facet.halfedge = Edges[facet_edges[0]].index
 
             for i in xrange(3):
-                Edges[all_facet_edges[i]].next = Edges[
-                    all_facet_edges[(i + 1) % 3]]
-                Edges[all_facet_edges[i]].prev = Edges[
-                    all_facet_edges[(i - 1) % 3]]
+                Edges[facet_edges[i]].next = Edges[facet_edges[(i + 1) % 3]].index
+                Edges[facet_edges[i]].prev = Edges[facet_edges[(i - 1) % 3]].index
 
                 # reverse edge ordering of vertex, e.g. (1,2)->(2,1)
-                if all_facet_edges[i][2::-1] in Edges:
-                    Edges[all_facet_edges[i]].opposite = \
-                        Edges[all_facet_edges[i][2::-1]]
+                if facet_edges[i][2::-1] in Edges:
+                    Edges[facet_edges[i]].opposite = Edges[facet_edges[i][2::-1]].index
 
-                    Edges[all_facet_edges[i][2::-1]].opposite = \
-                        Edges[all_facet_edges[i]]
+                    Edges[facet_edges[i][2::-1]].opposite = Edges[facet_edges[i]].index
 
-        return facets, Edges
-
-
-    def get_halfedge(self, u, v):
-        """Retrieve halfedge with starting vertex u and target vertex v
-
-        u - starting vertex
-        v - target vertex
-
-        Returns a halfedge
-        """
-        return self.edges[(u, v)]
+        return facets, halfedges
 
     def update_vertices(self, vertices):
         # update vertices
         vlist = []
-        i = 0
-        for v in vertices:
+        for i, v in enumerate(vertices):
             vlist.append(Vertex(v[0], v[1], v[2], i))
-            i += 1
         self.vertices = vlist
-
-        hlist = []
-        # update all the halfedges
-        for he in self.halfedges:
-            vi = he.vertex.index
-            hlist.append(Halfedge(None, None, None, self.vertices[vi], None,
-                he.index))
-
-        flist = []
-        # update neighboring halfedges
-        for f in self.facets:
-            hi = f.halfedge.index
-            flist.append(Facet(f.a, f.b, f.c, f.index,  hlist[hi]))
-        self.facets = flist
-
-
-        i = 0
-        for he in self.halfedges:
-            nextid = he.next.index
-            oppid = he.opposite.index
-            previd = he.prev.index
-
-            hlist[i].next = hlist[nextid]
-            hlist[i].opposite = hlist[oppid]
-            hlist[i].prev = hlist[previd]
-
-
-            fi = he.facet.index
-            hlist[i].facet = flist[fi]
-            i += 1
-
-        self.halfedges = hlist
-
 
 class Vertex:
 
@@ -256,7 +203,7 @@ class Vertex:
         y        - y-coordinate of the point
         z        - z-coordinate of the point
         index    - integer index of this vertex
-        halfedge - a halfedge that points to the vertex
+        halfedge - a halfedge that points to the vertex index
         """
 
         self.x = x
@@ -287,7 +234,7 @@ class Facet:
 
         a, b, c - indices for the vertices in the facet, counter clockwise.
         index - index of facet in the mesh
-        halfedge - a Halfedge that belongs to the facet
+        halfedge - a Halfedge that belongs to the facet (index)
         """
         self.a = a
         self.b = b
@@ -472,6 +419,7 @@ def cross_product(v1, v2):
     y3 = -(v1[0] * v2[2] - v2[0] * v1[2])
     z3 = v1[0] * v2[1] - v2[0] * v1[1]
     return [x3, y3, z3]
+
 
 def create_vector(p1, p2):
     """Contruct a vector going from p1 to p2.
