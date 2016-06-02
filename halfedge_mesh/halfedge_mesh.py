@@ -15,23 +15,25 @@ class HalfedgeMesh:
             halfedges - a list of HalfEdge types
             facets    - a list of Facet types
         """
-
-        self.vertices = []
-        self.halfedges = []
-        self.facets = []
+        self.vertex_list = []
+        self.halfedge_list = []
+        self.facet_list = []
         self.filename = filename
 
         if filename:
-            self.vertices, self.halfedges, self.facets = self.read_file(filename)
+            self.vertex_list, self.halfedge_list, self.facet_list = self.read_file(filename)
 
     def __eq__(self, other):
-        return (isinstance(other, type(self)) and 
-            (self.vertices, self.halfedges, self.facets) ==
-            (other.vertices, other.halfedges, other.facets))
+        return (isinstance(other, type(self)) and self.__key() == other.__key())
+
+    def __key(self):
+        return (self.vertex_list, self.halfedge_list, self.halfedge_list, 
+                self.filename)
 
     def __hash__(self):
-        return (hash(str(self.vertices)) ^ hash(str(self.halfedges)) ^ hash(str(self.facets)) ^ 
-            hash((str(self.vertices), str(self.halfedges), str(self.facets))))
+        return hash(str(self.vertex_list)) ^ hash(str(self.halfedge_list)) ^ \
+               hash(str(self.facet_list)) ^ hash(self.filename) ^ \
+               hash(str(self.__key()))
 
     def discard_comments(self, file_object, current_token):
         comment_character = "#"
@@ -84,9 +86,8 @@ class HalfedgeMesh:
         vertices = self.read_off_vertices(file_object, number_vertices)
 
         number_facets = vertices_faces_edges_counts[1]
-        facets, halfdges = self.parse_build_halfedge_off(file_object,
+        facets, halfedges = self.parse_build_halfedge_off(file_object,
                                                       number_facets, vertices)
-
         return vertices, halfedges, facets
 
     def read_off_vertices(self, file_object, number_vertices):
@@ -107,7 +108,7 @@ class HalfedgeMesh:
             except ValueError as e:
                 raise ValueError("vertices " + str(e))
 
-            vertices.append(Vertex(line[0], line[1], line[2], index))
+            vertices.append(Vertex(line[0], line[1], line[2], index, self))
 
         return vertices
 
@@ -137,13 +138,12 @@ class HalfedgeMesh:
         }
 
         """
-        Edges = {}
+        edges = {}
         facets = []
         halfedges = []
         halfedge_count = 0
 
         #TODO Check if vertex index out of bounds
-
         # For each facet
         for index in xrange(number_facets):
             line = file_object.readline().split()
@@ -153,7 +153,7 @@ class HalfedgeMesh:
 
             # TODO: make general to support non-triangular meshes
             # facets vertices are in counter-clockwise order
-            facet = Facet(line[1], line[2], line[3], index)
+            facet = Facet(line[1], line[2], line[3], index, self)
             facets.append(facet)
 
             # create pairing of vertices for example if the vertices are
@@ -165,45 +165,52 @@ class HalfedgeMesh:
             # For every halfedge around the facet
             for i in xrange(3):
                 current_halfedge = Halfedge()
-                current_halfedge.facet = facet.index
-                current_halfedge.vertex = vertices[facet_edges[i][1]].index
-                vertices[facet_edges[i][1]].halfedge = halfedge_count
+                current_halfedge.mesh = self
+                current_halfedge.facet_id = facet.index
+
+                current_halfedge.vertex_id = vertices[facet_edges[i][1]].index
+                vertices[facet_edges[i][1]].halfedge_id = halfedge_count
+
                 current_halfedge.index = halfedge_count
+
                 halfedges.append(current_halfedge)
-                Edges[facet_edges[i]] = current_halfedge
+
+                edges[facet_edges[i]] = current_halfedge
+
                 halfedge_count +=1
 
-            facet.halfedge = Edges[facet_edges[0]].index
+            facet.halfedge_id = edges[facet_edges[0]].index
 
             for i in xrange(3):
-                Edges[facet_edges[i]].next = Edges[facet_edges[(i + 1) % 3]].index
-                Edges[facet_edges[i]].prev = Edges[facet_edges[(i - 1) % 3]].index
+                edges[facet_edges[i]].next_id = edges[facet_edges[(i + 1) % 3]].index
+                edges[facet_edges[i]].prev_id = edges[facet_edges[(i - 1) % 3]].index
 
                 # reverse edge ordering of vertex, e.g. (1,2)->(2,1)
-                if facet_edges[i][2::-1] in Edges:
-                    Edges[facet_edges[i]].opposite = Edges[facet_edges[i][2::-1]].index
+                if facet_edges[i][2::-1] in edges:
+                    edges[facet_edges[i]].opposite_id = edges[facet_edges[i][2::-1]].index
 
-                    Edges[facet_edges[i][2::-1]].opposite = Edges[facet_edges[i]].index
+                    edges[facet_edges[i][2::-1]].opposite_id = edges[facet_edges[i]].index
 
         return facets, halfedges
 
+        
     def update_vertices(self, vertices):
         # update vertices
-        vlist = []
         for i, v in enumerate(vertices):
-            vlist.append(Vertex(v[0], v[1], v[2], i))
-        self.vertices = vlist
+            self.vertex_list[i].x = v[0]
+            self.vertex_list[i].y = v[1]
+            self.vertex_list[i].z = v[2]
 
 class Vertex:
 
-    def __init__(self, x=0, y=0, z=0, index=None, halfedge=None):
+    def __init__(self, x=0, y=0, z=0, index=None, mesh=None, halfedge_id=None):
         """Create a vertex with given index at given point.
 
-        x        - x-coordinate of the point
-        y        - y-coordinate of the point
-        z        - z-coordinate of the point
-        index    - integer index of this vertex
-        halfedge - a halfedge that points to the vertex index
+        x           - x-coordinate of the point
+        y           - y-coordinate of the point
+        z           - z-coordinate of the point
+        index       - integer index of this vertex
+        halfedge_id - a halfedge index
         """
 
         self.x = x
@@ -212,24 +219,30 @@ class Vertex:
 
         self.index = index
 
-        self.halfedge = halfedge
+        self.mesh = mesh
 
-    def __eq__(x, y):
-        return x.__key() == y.__key() and type(x) == type(y)
+        self.halfedge_id = halfedge_id
+
+    def __eq__(self, other):
+        return (allclose(self.__key(), other.__key()) and 
+                isinstance(other, type(self)))
 
     def __key(self):
-        return (self.x, self.y, self.z, self.index)
+        return (self.x, self.y, self.z, self.index, self.halfedge_id)
 
     def __hash__(self):
         return hash(self.__key())
 
-    def get_vertex(self):
+    def halfedge(self):
+        return self.mesh.halfedge_list[self.halfedge_id]
+
+    def coordinates(self):
         return [self.x, self.y, self.z]
 
 
 class Facet:
 
-    def __init__(self, a=-1, b=-1, c=-1, index=None, halfedge=None):
+    def __init__(self, a=-1, b=-1, c=-1, index=None, mesh=None, halfedge_id=None):
         """Create a facet with the given index with three vertices.
 
         a, b, c - indices for the vertices in the facet, counter clockwise.
@@ -240,32 +253,36 @@ class Facet:
         self.b = b
         self.c = c
         self.index = index
+
+        self.mesh = mesh
+
         # halfedge going ccw around this facet.
-        self.halfedge = halfedge
+        self.halfedge_id = halfedge_id
 
     def __eq__(self, other):
-        return self.a == other.a and self.b == other.b and self.c == other.c \
-            and self.index == other.index and self.halfedge == other.halfedge
+        return (isinstance(other, type(self)) and self.__key() == other.__key())
+
+    def __key(self):
+        return (self.a, self.b, self.c, self.index, self.mesh, self.halfedge_id)
 
     def __hash__(self):
-        return hash(self.halfedge) ^ hash(self.a) ^ hash(self.b) ^ \
-            hash(self.c) ^ hash(self.index) ^ \
-            hash((self.halfedges, self.a, self.b, self.c, self.index))
+        return hash(self.a) ^ hash(self.b) ^ hash(self.c) ^ hash(self.index) ^\
+               hash(self.mesh) ^ hash(self.halfedge_id) ^ hash(self.__key())
 
-    def get_normal(self):
+    def halfedge(self):
+        return self.mesh.halfedge_list[self.halfedge_id]
+
+    def normal(self):
         """Calculate the normal of facet
 
         Return a python list that contains the normal
         """
-        vertex_a = [self.halfedge.vertex.x, self.halfedge.vertex.y,
-                    self.halfedge.vertex.z]
+        vertex_a = self.halfedge().vertex().coordinates()
 
-        vertex_b = [self.halfedge.next.vertex.x, self.halfedge.next.vertex.y,
-                    self.halfedge.next.vertex.z]
+        vertex_b = self.halfedge().next().vertex().coordinates()
 
-        vertex_c = [self.halfedge.prev.vertex.x, self.halfedge.prev.vertex.y,
-                    self.halfedge.prev.vertex.z]
-
+        vertex_c = self.halfedge().prev().vertex().coordinates()
+        
         # create edge 1 with vector difference
         edge1 = [u - v for u, v in zip(vertex_b, vertex_a)]
         edge1 = normalize(edge1)
@@ -280,43 +297,58 @@ class Facet:
 
         return normal
 
-
 class Halfedge:
 
-    def __init__(self, next=None, opposite=None, prev=None, vertex=None,
-                 facet=None, index=None):
+    def __init__(self, opposite_id=None, next_id=None, prev_id=None, 
+                 vertex_id=None, facet_id=None, index=None, mesh=None):
         """Create a halfedge with given index.
         """
-        self.opposite = opposite
-        self.next = next
-        self.prev = prev
-        self.vertex = vertex
-        self.facet = facet
+        self.opposite_id = opposite_id
+        self.next_id = next_id
+        self.prev_id = prev_id
+        self.vertex_id = vertex_id 
+        self.facet_id = facet_id
         self.index = index
+        self.mesh = mesh
 
     def __eq__(self, other):
-        # TODO Test more
-        return (self.vertex == other.vertex) and \
-               (self.prev.vertex == other.prev.vertex) and \
-               (self.index == other.index)
+        return (isinstance(other, type(self)) and self.__key() == other.__key())
+
+    def __key(self):
+        return (self.opposite_id, self.next_id, self.prev_id, self.vertex_id,
+                self.facet_id, self.index, self.mesh)
 
     def __hash__(self):
-        return hash(self.opposite) ^ hash(self.next) ^ hash(self.prev) ^ \
-                hash(self.vertex) ^ hash(self.facet) ^ hash(self.index) ^ \
-                hash((self.opposite, self.next, self.prev, self.vertex,
-                    self.facet, self.index))
+        return hash(self.opposite_id) ^ hash(self.next_id) ^ \
+               hash(self.prev_id) ^ hash(self.vertex_id) ^ \
+               hash(self.facet_id) ^ hash(self.index) ^ hash(self.mesh) ^ \
+               hash(self.__key())
 
-    def get_angle_normal(self):
+    def opposite(self):
+        return self.mesh.halfedge_list[self.opposite_id]
+
+    def next(self):
+        return self.mesh.halfedge_list[self.next_id]
+
+    def prev(self):
+        return self.mesh.halfedge_list[self.prev_id]
+
+    def vertex(self):
+        return self.mesh.vertex_list[self.vertex_id]
+
+    def facet(self):
+        return self.mesh.facet_list[self.facet_id]
+
+    def angle_normal(self):
         """Calculate the angle between the normals that neighbor the edge.
 
         Return an angle in radians
         """
-        a = self.facet.get_normal()
-        b = self.opposite.facet.get_normal()
+        a = self.facet().normal()
+        b = self.opposite().facet().normal()
 
-        dir = [self.vertex.x - self.prev.vertex.x,
-               self.vertex.y - self.prev.vertex.y,
-               self.vertex.z - self.prev.vertex.z]
+        dir = map(lambda x,y: x-y, self.vertex().coordinates(), self.prev().vertex().coordinates())
+        
         dir = normalize(dir)
 
         ab = dot(a, b)
@@ -331,6 +363,7 @@ class Halfedge:
         assert (args <= 1.0 and args >= -1.0)
 
         angle = math.acos(args)
+        #print angle, a, b
 
         if not (angle % math.pi == 0):
             e = cross_product(a, b)
@@ -345,7 +378,6 @@ class Halfedge:
                 return -angle
         else:
             return 0
-
 
 def allclose(v1, v2):
     """Compare if v1 and v2 are close

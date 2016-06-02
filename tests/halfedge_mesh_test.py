@@ -4,19 +4,19 @@ import math
 import numpy as np
 
 class TestHalfedgeMesh:
-
-    @pytest.fixture(scope="module")
+#                               Data
+#------------------------------------------------------------------------------
+    @pytest.fixture()
     def cube_off_mesh(self):
         return halfedge_mesh.HalfedgeMesh("tests/data/cube.off")
 
-    @pytest.fixture(scope="module")
+    @pytest.fixture()
     def cube_large_off_mesh(self):
         return halfedge_mesh.HalfedgeMesh("tests/data/cube_large.off")
 
-    @pytest.fixture(scope="module")
+    @pytest.fixture()
     def cube_negative_off_mesh(self):
         return halfedge_mesh.HalfedgeMesh("tests/data/cube4.off")
-
 #------------------------------------------------------------------------------
     def test_eq_halfedge_mesh_cube(self, cube_off_mesh, cube_large_off_mesh):
         assert cube_off_mesh != cube_large_off_mesh
@@ -54,6 +54,7 @@ class TestHalfedgeMesh:
             assert len(e) == 3
 
     def test_update_vertices(self, cube_off_mesh):
+
         new_vertices = [[10, -10, -10],
                         [10, -10, 10],
                         [-10, -10, 10],
@@ -62,78 +63,75 @@ class TestHalfedgeMesh:
 						[10, 10, 10],
 						[-10, 10, 10],
 						[-10, 10, -10]]
+
         cube_off_mesh.update_vertices(new_vertices)
 
-        for k, i in enumerate(cube_off_mesh.vertices):
+        for k, i in enumerate(cube_off_mesh.vertex_list):
             assert new_vertices[k][0] == i.x
             assert new_vertices[k][1] == i.y
             assert new_vertices[k][2] == i.z
 
-#------------------------------------------------------------------------------
- # TODO: Check connectivity after update vertices
+    def test_halfedge_loop_around_facet(self, cube_off_mesh):
+        halfedge = cube_off_mesh.facet_list[0].halfedge()
+        assert halfedge.next().next().next().vertex() == halfedge.vertex()
 
-    #def test_halfedge_loop_around_facet(self, cube_off_mesh):
-    #    halfedge = cube_off_mesh.facets[0].halfedge
-    #    assert halfedge.next.next.next.vertex == halfedge.vertex
+    def test_vertices_in_facet(self, cube_off_mesh):
+        halfedge = cube_off_mesh.facet_list[0].halfedge()
 
-    #def test_vertices_in_facet(self, cube_off_mesh):
-    #    halfedge = cube_off_mesh.facets[0].halfedge
+        vertices = set((str([1.0, -1.0, 1.0]),
+                       str([1.0, -1.0, -1.0]),
+                       str([-1.0, -1.0, 1.0])))
 
-    #    vertices = set([halfedge_mesh.Vertex(1.0, -1.0, 1.0, 1),
-    #                halfedge_mesh.Vertex(1.0, -1.0, -1.0, 0),
-    #                halfedge_mesh.Vertex(-1.0, -1.0, 1.0, 2)])
+        # make sure all vertices are in the facet described by halfedge
+        assert str(halfedge.vertex().coordinates()) in vertices
+        vertices.remove( str(halfedge.vertex().coordinates()) )
 
-    #    # make sure all vertices are in the facet described by halfedge
-    #    assert halfedge.vertex in vertices
-    #    vertices.remove( halfedge.vertex )
+        assert str(halfedge.next().vertex().coordinates()) in vertices
+        vertices.discard(str(halfedge.next().vertex().coordinates()))
 
-    #    assert halfedge.next.vertex in vertices
-    #    vertices.discard( halfedge.next.vertex)
+        assert str(halfedge.next().next().vertex().coordinates()) in vertices
+        vertices.discard( str(halfedge.next().next().vertex().coordinates()))
+        assert len(vertices) == 0
 
-    #    assert halfedge.next.next.vertex in vertices
-    #    vertices.discard( halfedge.next.next.vertex)
+    def test_facet_eq_correct_for_same_object_and_diff_objects(self,
+                                                               cube_off_mesh):
+        assert cube_off_mesh.facet_list[0] == cube_off_mesh.facet_list[0]
+        assert cube_off_mesh.facet_list[1] != cube_off_mesh.facet_list[0]
 
-    #def test_facet_eq_correct_for_same_object_and_diff_objects(self,
-    #                                                           cube_off_mesh):
-    #    assert cube_off_mesh.facets[0] == cube_off_mesh.facets[0]
-    #    assert cube_off_mesh.facets[1] != cube_off_mesh.facets[0]
+        assert cube_off_mesh.facet_list[3] == cube_off_mesh.facet_list[3]
+        assert cube_off_mesh.facet_list[0] != cube_off_mesh.facet_list[3]
 
-    #    assert cube_off_mesh.facets[3] == cube_off_mesh.facets[3]
-    #    assert cube_off_mesh.facets[0] != cube_off_mesh.facets[3]
+    def test_halfedgemesh_vertices_are_in_order_with_cubeoff(self,
+                                                             cube_off_mesh):
+        # Tests parse_off since Vertex is just a basic class
+        vertices = cube_off_mesh.vertex_list
 
-    #def test_halfedgemesh_vertices_are_in_order_with_cubeoff(self,
-    #                                                         cube_off_mesh):
-    #    # Tests parse_off since Vertex is just a basic class
-    #    vertices = cube_off_mesh.vertices
+        # cube vertices in order
+        pts = [1, -1, -1,
+               1, -1, 1,
+               -1, -1, 1,
+               -1, -1, -1,
+               1, 1, -0.999999,
+               0.999999, 1, 1.000001]
 
-    #    # cube vertices in order
-    #    pts = [1, -1, -1,
-    #           1, -1, 1,
-    #           -1, -1, 1,
-    #           -1, -1, -1,
-    #           1, 1, -0.999999,
-    #           0.999999, 1, 1.000001]
+        count = 0
+        for index in range(0, len(vertices), 3):
+            np.allclose(vertices[count].coordinates(), 
+                        [pts[index], pts[index+1],pts[index+2]])
+            count += 1
 
-    #    count = 0
-    #    for index in range(0, len(vertices), 3):
-    #        # Vertex(a,b,c, index)
-    #        assert vertices[count] == halfedge_mesh.Vertex(pts[index],
-    #                                                       pts[index + 1],
-    #                                                       pts[index + 2],
-    #                                                       count)
-    #        count += 1
+    def test_halfedgemesh_vertices_in_facet_exists_with_cubeoff(self,
+                                                                cube_off_mesh):
+        # Tests parse_off since Vertex is just a basic class
 
-    #def test_halfedgemesh_vertices_in_facet_exists_with_cubeoff(self,
-    #                                                            cube_off_mesh):
-    #    # Tests parse_off since Vertex is just a basic class
+        facets = cube_off_mesh.facet_list
+        vertices = cube_off_mesh.vertex_list
 
-    #    facets = cube_off_mesh.facets
-    #    vertices = cube_off_mesh.vertices
+        for index in range(len(facets)):
+            # check that it's within the range of the number of vertices
+            assert facets[index].a < len(vertices)
+            assert (facets[index].a >= 0)
 
-    #    for index in range(len(facets)):
-    #        # check that it's within the range of the number of vertices
-    #        assert facets[index].a < len(vertices)
-    #        assert (facets[index].a >= 0)
 
     #def test_halfedgemesh_get_halfedge_returns_correct_vertices_with_cubeoff(
     #        self, cube_off_mesh):
@@ -149,6 +147,9 @@ class TestHalfedgeMesh:
     #    one_two = cube_off_mesh.get_halfedge(1, 2)
     #    assert one_two.vertex.index == 2
     #    assert one_two.prev.vertex.index == 1
+
+#------------------------------------------------------------------------------
+ # TODO: Check connectivity after update vertices
 
     #def test_halfedge_opposite_correct_vertices_with_cubeoff(self,
     #                                                         cube_off_mesh):
@@ -175,49 +176,49 @@ class TestHalfedgeMesh:
     #    assert zero_two != four_one
 
     ## test negative angles
-    #def test_get_angle_normal(self, cube_off_mesh, cube_negative_off_mesh):
+    def test_get_angle_normal(self, cube_off_mesh, cube_negative_off_mesh):
 
-    #    assert cube_off_mesh.facets[0].halfedge.vertex.index == 1
-    #    assert cube_off_mesh.facets[0].halfedge.prev.vertex.index == 0
-    #    assert halfedge_mesh.allclose(
-    #            cube_off_mesh.facets[0].halfedge.get_angle_normal(),
-    #            math.pi/2.0)
+        assert cube_off_mesh.facet_list[0].halfedge().vertex().index == 1
+        assert cube_off_mesh.facet_list[0].halfedge().prev().vertex().index == 0
 
-    #    assert cube_off_mesh.facets[1].halfedge.vertex.index == 7
-    #    assert cube_off_mesh.facets[1].halfedge.prev.vertex.index == 4
-    #    assert halfedge_mesh.allclose(
-    #            cube_off_mesh.facets[1].halfedge.get_angle_normal(),
-    #            math.pi/2.0)
+        assert np.allclose(
+                cube_off_mesh.facet_list[0].halfedge().angle_normal(),
+                    math.pi/2.0)
 
-    #    assert cube_off_mesh.facets[3].halfedge.next.vertex.index == 2
-    #    assert cube_off_mesh.facets[3].halfedge.next.prev.vertex.index == 5
-    #    assert halfedge_mesh.allclose(
-    #            cube_off_mesh.facets[3].halfedge.next.get_angle_normal(), 0.0)
+        assert cube_off_mesh.facet_list[1].halfedge().vertex().index == 7
+        assert cube_off_mesh.facet_list[1].halfedge().prev().vertex().index == 4
+        assert halfedge_mesh.allclose(
+                cube_off_mesh.facet_list[1].halfedge().angle_normal(),
+                math.pi/2.0)
 
-    #    assert
-    #    halfedge_mesh.allclose(cube_negative_off_mesh.get_halfedge(5,7).get_angle_normal(),
-    #    -0.67967381890824385)
+        assert cube_off_mesh.facet_list[3].halfedge().next().vertex().index == 2
+        assert cube_off_mesh.facet_list[3].halfedge().next().prev().vertex().index == 5
+        assert halfedge_mesh.allclose(
+                cube_off_mesh.facet_list[3].halfedge().next().angle_normal(), 0.0)
 
-    #def test_get_vertex(self, cube_off_mesh):
-    #    mesh_vertex = cube_off_mesh.vertices[0].get_vertex()
-    #    test_vertex = halfedge_mesh.Vertex(1,-1,-1,0).get_vertex()
-    #    assert halfedge_mesh.allclose(mesh_vertex,test_vertex)
+    def test_get_vertex(self, cube_off_mesh):
+        mesh_vertex = cube_off_mesh.vertex_list[0].coordinates()
+        test_vertex = [1,-1,-1]
+        assert halfedge_mesh.allclose(mesh_vertex, test_vertex)
 
-    #def test_update_vertices(self, cube_off_mesh, cube_large_off_mesh):
-    #    tmp = halfedge_mesh.HalfedgeMesh()
-    #    tmp.vertices= cube_off_mesh.vertices[:]
-    #    tmp.halfedges = cube_off_mesh.halfedges[:]
-    #    tmp.facets= cube_off_mesh.facets[:]
+    def test_update_vertices(self, cube_off_mesh, cube_large_off_mesh):
+        tmp = halfedge_mesh.HalfedgeMesh()
+        tmp.vertex_list = cube_off_mesh.vertex_list[:]
+        tmp.halfedge_list = cube_off_mesh.halfedge_list[:]
+        tmp.facet_list = cube_off_mesh.facet_list[:]
 
-    #    v = []
-    #    for vertex in cube_large_off_mesh.vertices:
-    #       v.append([ vertex.x, vertex.y, vertex.z ])
+        v = []
+        for vertex in cube_large_off_mesh.vertex_list:
+           v.append([ vertex.x, vertex.y, vertex.z ])
 
-    #    tmp.update_vertices(v)
+        tmp.update_vertices(v)
 
-    #    for i in range(len(cube_large_off_mesh.halfedges)):
-    #        assert tmp.halfedges[i].get_angle_normal() ==
-    #        cube_large_off_mesh.halfedges[i].get_angle_normal()
+        for i in range(len(cube_large_off_mesh.halfedge_list)):
+            tmp_angle = tmp.halfedge_list[i].angle_normal() 
+            cube_angle = cube_large_off_mesh.halfedge_list[i].angle_normal()
+            assert tmp_angle == cube_angle
+
+
 def test_internal_norm():
     assert halfedge_mesh.norm([0, -1, 0]) == 1.0
     assert halfedge_mesh.norm([0, 1, 0]) == 1.0
