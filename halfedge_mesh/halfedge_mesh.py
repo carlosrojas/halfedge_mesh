@@ -2,11 +2,11 @@ import sys
 import config
 import math
 
-
 # TODO: Reorder functions
 class HalfedgeMesh:
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, vertex_list=[], halfedge_list=[],
+                 facet_list=[]):
         """Make an empty halfedge mesh.
 
            filename   - a string that holds the directory location and name of
@@ -15,9 +15,9 @@ class HalfedgeMesh:
             halfedges - a list of HalfEdge types
             facets    - a list of Facet types
         """
-        self.vertex_list = []
-        self.halfedge_list = []
-        self.facet_list = []
+        self.vertex_list = vertex_list
+        self.halfedge_list = halfedge_list
+        self.facet_list = facet_list
         self.filename = filename
 
         if filename:
@@ -27,7 +27,7 @@ class HalfedgeMesh:
         return (isinstance(other, type(self)) and self.__key() == other.__key())
 
     def __key(self):
-        return (self.vertex_list, self.halfedge_list, self.halfedge_list, 
+        return (self.vertex_list, self.halfedge_list, self.halfedge_list,
                 self.filename)
 
     def __hash__(self):
@@ -63,7 +63,7 @@ class HalfedgeMesh:
 
                 # TODO: build OBJ, PLY parsers
                 parser_dispatcher = {"OFF": self.parse_off}
-                                      
+
                 return parser_dispatcher[first_line](file)
 
         except IOError as e:
@@ -193,7 +193,6 @@ class HalfedgeMesh:
 
         return facets, halfedges
 
-        
     def update_vertices(self, vertices):
         # update vertices
         for i, v in enumerate(vertices):
@@ -224,7 +223,7 @@ class Vertex:
         self.halfedge_id = halfedge_id
 
     def __eq__(self, other):
-        return (allclose(self.__key(), other.__key()) and 
+        return (allclose(self.__key(), other.__key()) and
                 isinstance(other, type(self)))
 
     def __key(self):
@@ -282,7 +281,7 @@ class Facet:
         vertex_b = self.halfedge().next().vertex().coordinates()
 
         vertex_c = self.halfedge().prev().vertex().coordinates()
-        
+
         # create edge 1 with vector difference
         edge1 = [u - v for u, v in zip(vertex_b, vertex_a)]
         edge1 = normalize(edge1)
@@ -299,14 +298,14 @@ class Facet:
 
 class Halfedge:
 
-    def __init__(self, opposite_id=None, next_id=None, prev_id=None, 
+    def __init__(self, opposite_id=None, next_id=None, prev_id=None,
                  vertex_id=None, facet_id=None, index=None, mesh=None):
         """Create a halfedge with given index.
         """
         self.opposite_id = opposite_id
         self.next_id = next_id
         self.prev_id = prev_id
-        self.vertex_id = vertex_id 
+        self.vertex_id = vertex_id
         self.facet_id = facet_id
         self.index = index
         self.mesh = mesh
@@ -348,7 +347,7 @@ class Halfedge:
         b = self.opposite().facet().normal()
 
         dir = map(lambda x,y: x-y, self.vertex().coordinates(), self.prev().vertex().coordinates())
-        
+
         dir = normalize(dir)
 
         ab = dot(a, b)
@@ -393,7 +392,6 @@ def allclose(v1, v2):
     elementwise_compare = map(
         (lambda x, y: abs(x - y) < config.EPSILON), v1, v2)
     return reduce((lambda x, y: x and y), elementwise_compare)
-
 
 def make_iterable(obj):
     """Check if obj is iterable, if not return an iterable with obj inside it.
