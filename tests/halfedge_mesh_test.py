@@ -41,8 +41,8 @@ class TestHalfedgeMesh:
     def test_read_off_vertices(self, cube_off_mesh):
         with open("tests/data/vertices_test.off") as vertices:
             v = cube_off_mesh.read_off_vertices(vertices, 2)
-            assert np.allclose([v[0].x, v[0].y, v[0].z], [10.3, 42., 20.])
-            assert np.allclose([v[1].x, v[1].y, v[1].z], [33, 21.3, 94.1])
+            assert np.allclose([v[0].x(), v[0].y(), v[0].z()], [10.3, 42., 20.])
+            assert np.allclose([v[1].x(), v[1].y(), v[1].z()], [33, 21.3, 94.1])
 
     def test_parse_build_halfedge_off(self, cube_off_mesh):
         with open("tests/data/faces_test.off") as faces:
@@ -67,9 +67,9 @@ class TestHalfedgeMesh:
         cube_off_mesh.update_vertices(new_vertices)
 
         for k, i in enumerate(cube_off_mesh.vertex_list):
-            assert new_vertices[k][0] == i.x
-            assert new_vertices[k][1] == i.y
-            assert new_vertices[k][2] == i.z
+            assert new_vertices[k][0] == i.x()
+            assert new_vertices[k][1] == i.y()
+            assert new_vertices[k][2] == i.z()
 
     def test_halfedge_loop_around_facet(self, cube_off_mesh):
         halfedge = cube_off_mesh.facet_list[0].halfedge()
@@ -78,20 +78,14 @@ class TestHalfedgeMesh:
     def test_vertices_in_facet(self, cube_off_mesh):
         halfedge = cube_off_mesh.facet_list[0].halfedge()
 
-        vertices = set((str([1.0, -1.0, 1.0]),
-                       str([1.0, -1.0, -1.0]),
-                       str([-1.0, -1.0, 1.0])))
-
         # make sure all vertices are in the facet described by halfedge
-        assert str(halfedge.vertex().coordinates()) in vertices
-        vertices.remove( str(halfedge.vertex().coordinates()) )
+        assert np.allclose(halfedge.vertex().coordinates, np.array([1.,-1.,1.]))
 
-        assert str(halfedge.next().vertex().coordinates()) in vertices
-        vertices.discard(str(halfedge.next().vertex().coordinates()))
+        assert np.allclose(halfedge.next().vertex().coordinates,
+            np.array([-1,-1,1]))
 
-        assert str(halfedge.next().next().vertex().coordinates()) in vertices
-        vertices.discard( str(halfedge.next().next().vertex().coordinates()))
-        assert len(vertices) == 0
+        assert np.allclose(halfedge.next().next().vertex().coordinates,
+            np.array([1,-1,-1]))
 
     def test_facet_eq_correct_for_same_object_and_diff_objects(self,
                                                                cube_off_mesh):
@@ -116,7 +110,7 @@ class TestHalfedgeMesh:
 
         count = 0
         for index in range(0, len(vertices), 3):
-            np.allclose(vertices[count].coordinates(), 
+            np.allclose(vertices[count].coordinates,
                         [pts[index], pts[index+1],pts[index+2]])
             count += 1
 
@@ -187,19 +181,19 @@ class TestHalfedgeMesh:
 
         assert cube_off_mesh.facet_list[1].halfedge().vertex().index == 7
         assert cube_off_mesh.facet_list[1].halfedge().prev().vertex().index == 4
-        assert halfedge_mesh.allclose(
+        assert np.allclose(
                 cube_off_mesh.facet_list[1].halfedge().angle_normal(),
                 math.pi/2.0)
 
         assert cube_off_mesh.facet_list[3].halfedge().next().vertex().index == 2
         assert cube_off_mesh.facet_list[3].halfedge().next().prev().vertex().index == 5
-        assert halfedge_mesh.allclose(
+        assert np.allclose(
                 cube_off_mesh.facet_list[3].halfedge().next().angle_normal(), 0.0)
 
     def test_get_vertex(self, cube_off_mesh):
-        mesh_vertex = cube_off_mesh.vertex_list[0].coordinates()
+        mesh_vertex = cube_off_mesh.vertex_list[0].coordinates
         test_vertex = [1,-1,-1]
-        assert halfedge_mesh.allclose(mesh_vertex, test_vertex)
+        assert np.allclose(mesh_vertex, test_vertex)
 
     def test_update_vertices(self, cube_off_mesh, cube_large_off_mesh):
         tmp = halfedge_mesh.HalfedgeMesh()
@@ -209,98 +203,11 @@ class TestHalfedgeMesh:
 
         v = []
         for vertex in cube_large_off_mesh.vertex_list:
-           v.append([ vertex.x, vertex.y, vertex.z ])
+           v.append([ vertex.x(), vertex.y(), vertex.z() ])
 
         tmp.update_vertices(v)
 
         for i in range(len(cube_large_off_mesh.halfedge_list)):
-            tmp_angle = tmp.halfedge_list[i].angle_normal() 
+            tmp_angle = tmp.halfedge_list[i].angle_normal()
             cube_angle = cube_large_off_mesh.halfedge_list[i].angle_normal()
             assert tmp_angle == cube_angle
-
-
-def test_internal_norm():
-    assert halfedge_mesh.norm([0, -1, 0]) == 1.0
-    assert halfedge_mesh.norm([0, 1, 0]) == 1.0
-    assert halfedge_mesh.norm([1, 0, 0]) == 1.0
-    assert halfedge_mesh.norm([0, 0, 1]) == 1.0
-    assert halfedge_mesh.norm([-1, 0, 0]) == 1.0
-    assert halfedge_mesh.norm([0, 0, -1]) == 1.0
-    assert halfedge_mesh.norm([0, -1, 0]) == 1.0
-    assert halfedge_mesh.norm([1, 0, 0]) == 1.0
-    assert halfedge_mesh.norm([0, 0, -1]) == 1.0
-    assert halfedge_mesh.norm([0, 1, 0]) == 1.0
-    assert halfedge_mesh.norm([-1, 0, 0]) == 1.0
-    assert halfedge_mesh.norm([0, 0, 1]) == 1.0
-    assert halfedge_mesh.norm([1, 1, 1]) == math.sqrt(3)
-
-def test_internal_cross_product():
-    v_i = [1, 0, 0]
-    v_j = [0, 1, 0]
-    v_k = [0, 0, 1]
-    assert halfedge_mesh.cross_product(v_i, v_i) == [0, 0, 0]
-    assert halfedge_mesh.cross_product(v_i, v_j) == v_k
-    assert halfedge_mesh.cross_product(v_j, v_k) == v_i
-    assert halfedge_mesh.cross_product(v_k, v_i) == v_j
-    assert halfedge_mesh.cross_product(v_j, v_i) == map(lambda x: -x, v_k)
-    assert halfedge_mesh.cross_product(v_i, v_k) == map(lambda x: -x, v_j)
-    assert halfedge_mesh.cross_product(v_k, v_j) == map(lambda x: -x, v_i)
-
-def test_allclose_list_int_float():
-    assert halfedge_mesh.allclose(1, 1)
-    assert halfedge_mesh.allclose(0, 0)
-    assert halfedge_mesh.allclose(-1, -1)
-    assert halfedge_mesh.allclose([1.34, 1.4, 5688.66], [1.34, 1.4, 5688.66])
-    assert halfedge_mesh.allclose([-1.34, -1.4, -5688.66], [-1.34, -1.4, -5688.66])
-    assert halfedge_mesh.allclose([1.33], [1.33])
-    assert halfedge_mesh.allclose(1.33, 1.33)
-    assert halfedge_mesh.allclose([1, 2, 3, 4], [1, 2, 3, 4])
-    assert halfedge_mesh.allclose([-1, -2, -3, -4], [-1, -2, -3, -4])
-
-def test_dot():
-    assert halfedge_mesh.dot([1, 2, 3], [1, 2, 3]) == 14
-    assert halfedge_mesh.dot([-1, -2, -3], [1, 2, 3]) == -14
-    assert halfedge_mesh.dot([1, 2, 3], [-1, -2, -3]) == -14
-    assert halfedge_mesh.dot([0, 1, 0], [1, 0, 0]) == 0
-    assert halfedge_mesh.dot([0, -1, 0], [-1, 0, 0]) == 0
-    assert halfedge_mesh.dot([1, 0, 0], [0, 0, 1]) == 0
-    assert halfedge_mesh.dot([1], [2]) == 2
-    assert halfedge_mesh.dot([3, 4], [10, 8]) == 62
-    assert halfedge_mesh.allclose((halfedge_mesh.dot([1.23, 4.5, 0.0],
-                                                     [1.3865, 4.56, 81.3865])),
-                                                     22.225394999999999)
-
-def test_make_iterable():
-    assert halfedge_mesh.make_iterable([1]) == [1]
-    assert halfedge_mesh.make_iterable([-1]) == [-1]
-    assert halfedge_mesh.make_iterable(2) == [2]
-    assert halfedge_mesh.make_iterable(-2) == [-2]
-    assert halfedge_mesh.make_iterable((3)) == [3]
-    assert halfedge_mesh.make_iterable((-3)) == [-3]
-    assert halfedge_mesh.make_iterable((3, 2, 1)) == (3, 2, 1)
-    assert halfedge_mesh.make_iterable((-3, -2, -1)) == (-3, -2, -1)
-    assert halfedge_mesh.make_iterable(1.2345) == [1.2345]
-    assert halfedge_mesh.make_iterable(-1.2345) == [-1.2345]
-    assert halfedge_mesh.make_iterable([1.234, 344.33]) == [1.234, 344.33]
-
-def test_normalize_vectors():
-    assert halfedge_mesh.allclose(halfedge_mesh.normalize([1, 2, 3]),
-                                  [0.26726124,  0.53452248,  0.80178373])
-
-    assert halfedge_mesh.allclose(halfedge_mesh.normalize([3.43, 566.7, 9.6]),
-                                  [0.00605161,  0.99983824,  0.01693744])
-
-    assert halfedge_mesh.allclose(halfedge_mesh.normalize([100000., 1222222., 30000000]),
-        [0.00333055,  0.04070674,  0.99916559])
-
-    assert halfedge_mesh.allclose(halfedge_mesh.normalize([0,0,0]), [0,0,0])
-
-def test_create_vector():
-    p1 = [0,0,0]
-    p2 = [-1,-1,-1]
-    v = halfedge_mesh.create_vector(p1, p2)
-    assert halfedge_mesh.allclose(v, [-1,-1,-1])
-
-    p3 = [4,4,4]
-    v = halfedge_mesh.create_vector(p2, p3)
-    assert halfedge_mesh.allclose(v, [5,5,5])

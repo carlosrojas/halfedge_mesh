@@ -1,6 +1,7 @@
 import sys
 import config
-import math
+import numpy as np
+import numpy.linalg as la
 
 # TODO: Reorder functions
 class HalfedgeMesh:
@@ -211,10 +212,7 @@ class Vertex:
         index       - integer index of this vertex
         halfedge_id - a halfedge index
         """
-
-        self.x = x
-        self.y = y
-        self.z = z
+        self.coordinates = np.array([x,y,z])
 
         self.index = index
 
@@ -223,11 +221,11 @@ class Vertex:
         self.halfedge_id = halfedge_id
 
     def __eq__(self, other):
-        return (allclose(self.__key(), other.__key()) and
+        return (np.allclose(self.__key(), other.__key()) and
                 isinstance(other, type(self)))
 
     def __key(self):
-        return (self.x, self.y, self.z, self.index, self.halfedge_id)
+        return (self.x(), self.y(), self.z(), self.index, self.halfedge_id)
 
     def __hash__(self):
         return hash(self.__key())
@@ -235,8 +233,14 @@ class Vertex:
     def halfedge(self):
         return self.mesh.halfedge_list[self.halfedge_id]
 
-    def coordinates(self):
-        return [self.x, self.y, self.z]
+    def x(self):
+        return self.coordinates[0]
+
+    def y(self):
+        return self.coordinates[1]
+
+    def z(self):
+        return self.coordinates[2]
 
 
 class Facet:
@@ -276,23 +280,23 @@ class Facet:
 
         Return a python list that contains the normal
         """
-        vertex_a = self.halfedge().vertex().coordinates()
+        vertex_a = self.halfedge().vertex().coordinates
 
-        vertex_b = self.halfedge().next().vertex().coordinates()
+        vertex_b = self.halfedge().next().vertex().coordinates
 
-        vertex_c = self.halfedge().prev().vertex().coordinates()
+        vertex_c = self.halfedge().prev().vertex().coordinates
 
         # create edge 1 with vector difference
-        edge1 = [u - v for u, v in zip(vertex_b, vertex_a)]
-        edge1 = normalize(edge1)
+        edge1 = vertex_b - vertex_a
+        edge1 /= la.norm(edge1)
         # create edge 2 ...
-        edge2 = [u - v for u, v in zip(vertex_c, vertex_b)]
-        edge2 = normalize(edge2)
+        edge2 = vertex_c - vertex_b
+        edge2 /= la.norm(edge2)
 
         # cross product
-        normal = cross_product(edge1, edge2)
+        normal = np.cross(edge1, edge2)
 
-        normal = normalize(normal)
+        normal /= la.norm(normal)
 
         return normal
 
@@ -346,116 +350,34 @@ class Halfedge:
         a = self.facet().normal()
         b = self.opposite().facet().normal()
 
-        dir = map(lambda x,y: x-y, self.vertex().coordinates(), self.prev().vertex().coordinates())
+        dir = self.vertex().coordinates - self.prev().vertex().coordinates
 
-        dir = normalize(dir)
+        dir /= la.norm(dir)
 
-        ab = dot(a, b)
+        ab = np.dot(a, b)
 
-        args = ab / (norm(a) * norm(b))
+        args = ab / (la.norm(a) * la.norm(b))
 
-        if allclose(args, 1):
+        if np.allclose(args, 1):
             args = 1
-        elif allclose(args, -1):
+        elif np.allclose(args, -1):
             args = -1
 
         assert (args <= 1.0 and args >= -1.0)
 
-        angle = math.acos(args)
+        angle = np.arccos(args)
         #print angle, a, b
 
-        if not (angle % math.pi == 0):
-            e = cross_product(a, b)
-            e = normalize(e)
+        if not (angle % np.pi == 0):
+            e = np.cross(a, b)
+            e /= la.norm(e)
 
             vec = dir
-            vec = normalize(vec)
+            vec /= la.norm(vec)
 
-            if (allclose(vec, e)):
+            if (np.allclose(vec, e)):
                 return angle
             else:
                 return -angle
         else:
             return 0
-
-def allclose(v1, v2):
-    """Compare if v1 and v2 are close
-
-    v1, v2 - any numerical type or list/tuple of numerical types
-
-    Return bool if vectors are close, up to some epsilon specified in config.py
-    """
-
-    v1 = make_iterable(v1)
-    v2 = make_iterable(v2)
-
-    elementwise_compare = map(
-        (lambda x, y: abs(x - y) < config.EPSILON), v1, v2)
-    return reduce((lambda x, y: x and y), elementwise_compare)
-
-def make_iterable(obj):
-    """Check if obj is iterable, if not return an iterable with obj inside it.
-    Otherwise just return obj.
-
-    obj - any type
-
-    Return an iterable
-    """
-    try:
-        iter(obj)
-    except:
-        return [obj]
-    else:
-        return obj
-
-
-def dot(v1, v2):
-    """Dot product(inner product) of v1 and v2
-
-    v1, v2 - python list
-
-    Return v1 dot v2
-    """
-    elementwise_multiply = map((lambda x, y: x * y), v1, v2)
-    return reduce((lambda x, y: x + y), elementwise_multiply)
-
-
-def norm(vec):
-    """ Return the Euclidean norm of a 3d vector.
-
-    vec - a 3d vector expressed as a list of 3 floats.
-    """
-    return math.sqrt(reduce((lambda x, y: x + y * y), vec, 0.0))
-
-
-def normalize(vec):
-    """Normalize a vector
-
-    vec - python list
-
-    Return normalized vector
-    """
-    if norm(vec) < 1e-6:
-        return [0 for i in xrange(len(vec))]
-    return map(lambda x: x / norm(vec), vec)
-
-
-def cross_product(v1, v2):
-    """ Return the cross product of v1, v2.
-
-    v1, v2 - 3d vector expressed as a list of 3 floats.
-    """
-    x3 = v1[1] * v2[2] - v2[1] * v1[2]
-    y3 = -(v1[0] * v2[2] - v2[0] * v1[2])
-    z3 = v1[0] * v2[1] - v2[0] * v1[1]
-    return [x3, y3, z3]
-
-
-def create_vector(p1, p2):
-    """Contruct a vector going from p1 to p2.
-
-    p1, p2 - python list wth coordinates [x,y,z].
-
-    Return a list [x,y,z] for the coordinates of vector
-    """
-    return map((lambda x,y: x-y), p2, p1)
