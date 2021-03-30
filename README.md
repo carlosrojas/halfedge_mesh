@@ -53,7 +53,7 @@ halfedge_mesh is importable, for example by typing once:
     pip install -e .   # install package using setup.py in editable mode
 
 ## Help
-Email me, Carlos Rojas at <crojas@ucdavis.edu>
+Email me, Carlos Rojas at <carlos.rojas@sjsu.edu>
 
 ## Contribution Guidelines
 Please follow the [PEP 8 style guide for python](http://legacy.python.org/dev/peps/pep-0008/)
